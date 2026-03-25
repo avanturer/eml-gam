@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eml-gam"
+version = "0.1.0"
+description = "Gradient-trained symbolic GA²M built on the EML operator."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+keywords = [
+    "symbolic regression",
+    "interpretable machine learning",
+    "generalized additive models",
+    "tabular data",
+    "scientific computing",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.0",
+    "sympy>=1.12",
+    "numpy>=1.24",
+    "scikit-learn>=1.3",
+]
+
+[project.optional-dependencies]
+benchmarks = [
+    "interpret>=0.4",
+    "xgboost>=2.0",
+    "gplearn>=0.4",
+    "pandas>=2.0",
+]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/avanturer/eml-gam"
+Repository = "https://github.com/avanturer/eml-gam"
+Issues = "https://github.com/avanturer/eml-gam/issues"
+
+[tool.setuptools.packages.find]
+include = ["eml_gam*"]
+exclude = ["tests*", "scripts*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]

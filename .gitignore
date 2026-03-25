@@ -1,0 +1,42 @@
+# Byte-compiled / optimised Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editors and IDEs
+.idea/
+.vscode/
+.DS_Store
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Project artefacts
+*.log
+*.out
+# downloaded datasets are reproducible; do not commit blobs
+data/*.csv
+data/*.xlsx
+!data/.gitkeep
