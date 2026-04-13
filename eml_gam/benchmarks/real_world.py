@@ -1,6 +1,6 @@
 """Real-world benchmarks on UCI datasets.
 
-Two datasets are included:
+Four datasets are included:
 
   - Yacht Hydrodynamics (``yacht.csv``): residuary resistance of a yacht
     hull as a function of six geometric parameters. Training is restricted
@@ -12,10 +12,22 @@ Two datasets are included:
     seven engine and body parameters. This is the classical commercial
     tabular benchmark; tree-based methods are expected to dominate.
 
-An ``isolated_physics`` flag restricts the input to the single feature that
-carries the dominant physical effect (Froude number for Yacht, vehicle
-weight for Auto-MPG). This gives a cleaner view of extrapolation in the
-regime where the symbolic model has a structural advantage.
+  - Concrete Compressive Strength (``concrete.csv``): compressive strength
+    of concrete as a function of eight mixture and curing parameters.
+    Extrapolation split by ``age`` at 28 days (standard curing time);
+    train on age <= 28, test on age > 28.
+
+  - Airfoil Self-Noise (``airfoil.csv``): sound pressure level of NACA
+    airfoils as a function of five aerodynamic parameters. Extrapolation
+    split by ``frequency`` at 2000 Hz; train on freq <= 2000, test on
+    freq > 2000.
+
+An ``isolated_physics`` flag restricts the input to the features that
+carry the dominant physical effect (Froude number for Yacht, vehicle
+weight for Auto-MPG, cement/water/age for Concrete,
+frequency/chord_length for Airfoil). This gives a cleaner view of
+extrapolation in the regime where the symbolic model has a structural
+advantage.
 """
 
 from __future__ import annotations
@@ -45,6 +57,8 @@ DATA_DIR = os.path.join(
 )
 AUTO_MPG_PATH = os.path.join(DATA_DIR, "auto_mpg.csv")
 YACHT_PATH = os.path.join(DATA_DIR, "yacht.csv")
+CONCRETE_PATH = os.path.join(DATA_DIR, "concrete.csv")
+AIRFOIL_PATH = os.path.join(DATA_DIR, "airfoil.csv")
 
 
 @dataclass
@@ -77,6 +91,28 @@ def _load_yacht() -> tuple[np.ndarray, np.ndarray, list[str]]:
     ]
     X = df[features].to_numpy(dtype=np.float64)
     y = df["residuary_resistance"].to_numpy(dtype=np.float64)
+    return X, y, features
+
+
+def _load_concrete() -> tuple[np.ndarray, np.ndarray, list[str]]:
+    df = pd.read_csv(CONCRETE_PATH)
+    features = [
+        "cement", "blast_furnace_slag", "fly_ash", "water",
+        "superplasticizer", "coarse_aggregate", "fine_aggregate", "age",
+    ]
+    X = df[features].to_numpy(dtype=np.float64)
+    y = df["compressive_strength"].to_numpy(dtype=np.float64)
+    return X, y, features
+
+
+def _load_airfoil() -> tuple[np.ndarray, np.ndarray, list[str]]:
+    df = pd.read_csv(AIRFOIL_PATH)
+    features = [
+        "frequency", "angle_of_attack", "chord_length",
+        "free_stream_velocity", "suction_side_displacement",
+    ]
+    X = df[features].to_numpy(dtype=np.float64)
+    y = df["sound_pressure_level"].to_numpy(dtype=np.float64)
     return X, y, features
 
 
@@ -260,9 +296,43 @@ def run_auto_mpg(
     )
 
 
+def run_concrete(
+    verbose: bool = True, isolated_physics: bool = False
+) -> list[RWResult]:
+    """UCI Concrete Compressive Strength benchmark."""
+    X, y, features = _load_concrete()
+    if isolated_physics:
+        idx_list = [features.index(f) for f in ["cement", "water", "age"]]
+        X = X[:, idx_list]
+        features = ["cement", "water", "age"]
+    return _run_dataset(
+        X, y, features, dataset_name="concrete",
+        split_feature="age", split_threshold=29,
+        verbose=verbose,
+    )
+
+
+def run_airfoil(
+    verbose: bool = True, isolated_physics: bool = False
+) -> list[RWResult]:
+    """UCI Airfoil Self-Noise benchmark."""
+    X, y, features = _load_airfoil()
+    if isolated_physics:
+        idx_list = [features.index(f) for f in ["frequency", "chord_length"]]
+        X = X[:, idx_list]
+        features = ["frequency", "chord_length"]
+    return _run_dataset(
+        X, y, features, dataset_name="airfoil",
+        split_feature="frequency", split_threshold=2001,
+        verbose=verbose,
+    )
+
+
 if __name__ == "__main__":
     import torch
     torch.manual_seed(0)
     np.random.seed(0)
     run_yacht(isolated_physics=True)
     run_auto_mpg(isolated_physics=False)
+    run_concrete(isolated_physics=False)
+    run_airfoil(isolated_physics=False)
