@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "EML-GA²M: Gradient-trained symbolic GA²M built on the EML operator"
+abstract: >-
+  Implementation of a generalized additive model with pairwise interactions
+  in which every shape function is a closed-form expression built from the
+  single binary operator eml(x, y) = exp(x) - log(y). Trained end-to-end by
+  soft-to-hard annealing over a primitive atlas of known snap configurations.
+authors:
+  - family-names: "avanturer"
+    given-names: ""
+version: "0.1.0"
+date-released: "2026-04-16"
+repository-code: "https://github.com/avanturer/eml-gam"
+license: MIT
+references:
+  - type: article
+    title: "All elementary functions from a single binary operator"
+    authors:
+      - family-names: "Odrzywołek"
+        given-names: "Andrzej"
+    year: 2026
+    identifiers:
+      - type: other
+        value: "arXiv:2603.21852"
+  - type: article
+    title: "Accurate intelligible models with pairwise interactions"
+    authors:
+      - family-names: "Lou"
+        given-names: "Yin"
+      - family-names: "Caruana"
+        given-names: "Rich"
+      - family-names: "Gehrke"
+        given-names: "Johannes"
+      - family-names: "Hooker"
+        given-names: "Giles"
+    year: 2013
+    conference:
+      name: "KDD"
