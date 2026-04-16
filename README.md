@@ -68,12 +68,20 @@ Target: `y = 3*log(x1) + 2*exp(x2) - 4*x3 + 5*(x4/x5) + noise` with 15 noise fea
 
 Pair selector correctly identifies (x4, x5) as the top interaction. EBM wins here because it's pure interpolation — no extrapolation advantage for symbolic models.
 
+### Additional UCI datasets
+
+Two more real-world datasets are included (Concrete Compressive Strength and Airfoil Self-Noise). On these, EML-GA²M does **not** win — the underlying relationships are not pure exp/log, so the method has no structural advantage. These results are included for honesty; see `benchmarks/real_world.py`.
+
 ### Ablation
 
 Each component matters — see `benchmarks/ablation.py`:
 - Warm-start from primitive atlas: biggest single contributor (fixes convergence from ~25% to ~100%)
 - Scale normalisation: needed for features with extreme magnitudes (Arrhenius 1/T ~ 0.002)
 - Two-sided holdout + adaptive simplicity tolerance: fine-tunes symbolic form selection
+
+### Error bars
+
+All results can be re-run with multiple seeds via `benchmarks/multiseed.py` to get mean +/- std. This shows robustness to random initialisation and noise draws.
 
 ## Installation
 
@@ -144,10 +152,10 @@ eml_gam/
     benchmarks/
         scientific.py     # synthetic targets (exp decay, Arrhenius, etc.)
         extrapolation.py  # main benchmark runner
-        multiseed.py      # multi-seed runs with error bars
         ablation.py       # ablation study
         scalability.py    # 20-feature experiment
         real_world.py     # UCI datasets (Yacht, Auto-MPG, Concrete, Airfoil)
+        multiseed.py      # multi-seed runs with confidence intervals
 tests/
     test_eml_tree.py      # unit tests
 scripts/
@@ -178,9 +186,10 @@ python -m pytest tests/ -v
 
 ## Limitations
 
-- **Sigmoid is out.** `1/(1+exp(-x))` needs addition, which costs ~19 EML operations. Depth-2 trees (3 nodes) can't do it. Targets dominated by logistic/sigmoid structure won't work. This could be fixed with depth-3+ trees but convergence gets harder.
-- **Not a general tabular model.** On something like Auto-MPG (mixed features, no dominant physical law), EBM and XGBoost are better. This is a tool for scientific data with known exp/log/power structure, not a replacement for gradient boosting.
-- **Convergence isn't guaranteed.** Warm-start helps a lot, but some targets still need multi-start. The primitive atlas only covers depth-2 forms; deeper trees fall back to random init.
+- **Sigmoid is out.** `1/(1+exp(-x))` needs addition, which costs ~19 EML operations (Table 4 in the paper). Depth-2 trees (3 nodes) can't do it. Targets dominated by logistic/sigmoid structure won't work.
+- **Not a general tabular model.** On mixed-feature datasets (Auto-MPG, Concrete, Airfoil), EBM and XGBoost are better. This is a tool for scientific data with known exp/log/power structure.
+- **Convergence isn't guaranteed.** Warm-start helps a lot, but some targets still need multi-start. The primitive atlas only covers depth-2 forms.
+- **Extrapolation can explode.** If the model fits `exp(a*x)` and a is large, predictions outside the training range grow exponentially. This happened on Concrete (age > 28 days). A proper deployment should clamp predictions or validate the domain.
 
 ## References
 

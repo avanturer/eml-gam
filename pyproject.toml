@@ -37,6 +37,9 @@ benchmarks = [
     "xgboost>=2.0",
     "gplearn>=0.4",
     "pandas>=2.0",
+    "openpyxl>=3.0",
+    "xlrd>=2.0",
+    "matplotlib>=3.5",
 ]
 dev = [
     "pytest>=7.0",

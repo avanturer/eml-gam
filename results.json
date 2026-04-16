@@ -1,0 +1,809 @@
+{
+  "synthetic_extrapolation": [
+    {
+      "dataset": "exp_decay",
+      "model": "linear",
+      "r2_interp": 0.9767517149692523,
+      "r2_extrap": -50.094774279146684,
+      "mse_interp": 0.024844716388079037,
+      "mse_extrap": 7.494915326062221,
+      "train_time_s": 0.0044273369999245915,
+      "formula": ""
+    },
+    {
+      "dataset": "exp_decay",
+      "model": "ebm",
+      "r2_interp": 0.9995547053477853,
+      "r2_extrap": -4.24897254689468,
+      "mse_interp": 0.0004758724924771207,
+      "mse_extrap": 0.7699535880689246,
+      "train_time_s": 1.9659427240003424,
+      "formula": ""
+    },
+    {
+      "dataset": "exp_decay",
+      "model": "xgboost",
+      "r2_interp": 0.9974697660357733,
+      "r2_extrap": -4.471212053650376,
+      "mse_interp": 0.002703982042269188,
+      "mse_extrap": 0.8025531309525025,
+      "train_time_s": 0.4459854990000167,
+      "formula": ""
+    },
+    {
+      "dataset": "exp_decay",
+      "model": "gplearn",
+      "r2_interp": 0.9949117505812857,
+      "r2_extrap": -29.59851385154265,
+      "mse_interp": 0.0054376532958268185,
+      "mse_extrap": 4.4883899313799684,
+      "train_time_s": 18.457242444999792,
+      "formula": "sub(sub(inv(sqrt(-0.075)), X0), mul(log(log(-0.407)), add(add(sqrt(div(0.709, 0.213)), log(sub(div(0.709, 0.213), div(div(inv(-0.179), neg(X0)), sqrt(sub(X0, 0.247)))))), inv(0.247))))"
+    },
+    {
+      "dataset": "exp_decay",
+      "model": "emlgam",
+      "r2_interp": 0.9999415052200012,
+      "r2_extrap": 0.9805906277219126,
+      "mse_interp": 6.251154514542373e-05,
+      "mse_extrap": 0.0028470935395766197,
+      "train_time_s": 2.618314719999944,
+      "formula": "0.109913367632441 + 4.91589988670616*exp(-0.417614204272432*t)"
+    },
+    {
+      "dataset": "arrhenius",
+      "model": "linear",
+      "r2_interp": 0.9439273074988384,
+      "r2_extrap": 0.2809103945437741,
+      "mse_interp": 5389.754779434301,
+      "mse_extrap": 2464517.83234685,
+      "train_time_s": 0.001033024999742338,
+      "formula": ""
+    },
+    {
+      "dataset": "arrhenius",
+      "model": "ebm",
+      "r2_interp": 0.9997003506819789,
+      "r2_extrap": 0.023300229954375307,
+      "mse_interp": 28.80254669284791,
+      "mse_extrap": 3347418.710912016,
+      "train_time_s": 0.5946952670001338,
+      "formula": ""
+    },
+    {
+      "dataset": "arrhenius",
+      "model": "xgboost",
+      "r2_interp": 0.9988447694720394,
+      "r2_extrap": 0.01823375847059705,
+      "mse_interp": 111.04173853065774,
+      "mse_extrap": 3364782.9020004496,
+      "train_time_s": 0.09356062000006204,
+      "formula": ""
+    },
+    {
+      "dataset": "arrhenius",
+      "model": "gplearn",
+      "r2_interp": 0.9999453303953192,
+      "r2_extrap": 0.9746672159611516,
+      "mse_interp": 5.2548887876616615,
+      "mse_extrap": 86822.41758608515,
+      "train_time_s": 64.85688976199981,
+      "formula": "mul(mul(sub(div(mul(mul(div(mul(mul(sub(div(mul(mul(sub(div(mul(mul(sub(div(mul(mul(sub(div(mul(mul(sub(div(mul(mul(sub(div(mul(mul(sub(div(mul(mul(sub(div(mul(mul(sub(div(mul(mul(sub(div(mul(mul(sub("
+    },
+    {
+      "dataset": "arrhenius",
+      "model": "emlgam",
+      "r2_interp": 0.8435875770249951,
+      "r2_extrap": 0.5704984953582577,
+      "mse_interp": 15034.494808234289,
+      "mse_extrap": 1472019.7721920954,
+      "train_time_s": 2.11405146900006,
+      "formula": "-5662.52316902685*log(4159.38726801103*inv_T - 0.0827391675386191) - 1548.76765526571 + 5662.52316902685*E"
+    },
+    {
+      "dataset": "michaelis_menten",
+      "model": "linear",
+      "r2_interp": 0.9687665432015898,
+      "r2_extrap": -47.97822252209447,
+      "mse_interp": 0.04050352234042403,
+      "mse_extrap": 23.795468126417678,
+      "train_time_s": 0.00099865599986515,
+      "formula": ""
+    },
+    {
+      "dataset": "michaelis_menten",
+      "model": "ebm",
+      "r2_interp": 0.9991745272195269,
+      "r2_extrap": -4.140432724958778,
+      "mse_interp": 0.0010704724559019738,
+      "mse_extrap": 2.497416132395819,
+      "train_time_s": 0.24075048399981824,
+      "formula": ""
+    },
+    {
+      "dataset": "michaelis_menten",
+      "model": "xgboost",
+      "r2_interp": 0.9920979084638887,
+      "r2_extrap": -4.1543674333515614,
+      "mse_interp": 0.010247426121762179,
+      "mse_extrap": 2.5041861393976417,
+      "train_time_s": 0.08649580500014054,
+      "formula": ""
+    },
+    {
+      "dataset": "michaelis_menten",
+      "model": "gplearn",
+      "r2_interp": 0.9932044082162669,
+      "r2_extrap": -2.0487929396731426,
+      "mse_interp": 0.008812518108557515,
+      "mse_extrap": 1.4812186209353102,
+      "train_time_s": 15.98800982299963,
+      "formula": "sub(add(log(div(X0, -0.039)), log(X0)), mul(div(sqrt(X0), log(0.058)), log(X0)))"
+    },
+    {
+      "dataset": "michaelis_menten",
+      "model": "emlgam",
+      "r2_interp": 0.9997723387814871,
+      "r2_extrap": -0.046745648914498394,
+      "mse_interp": 0.00029523089005491785,
+      "mse_extrap": 0.5085485230497131,
+      "train_time_s": 1.872683434999999,
+      "formula": "7.18383835329868 - 6.8551503069175*exp(-0.571638167408686*S)"
+    },
+    {
+      "dataset": "cobb_douglas",
+      "model": "linear",
+      "r2_interp": 0.9626416636708085,
+      "r2_extrap": -33.841202385843125,
+      "mse_interp": 0.0052055112942816905,
+      "mse_extrap": 2.0742745890197885,
+      "train_time_s": 0.0020056820003446774,
+      "formula": ""
+    },
+    {
+      "dataset": "cobb_douglas",
+      "model": "ebm",
+      "r2_interp": 0.9992778745190917,
+      "r2_extrap": -7.218807774400355,
+      "mse_interp": 0.00010062097823717962,
+      "mse_extrap": 0.48930757123939,
+      "train_time_s": 0.8788902579999558,
+      "formula": ""
+    },
+    {
+      "dataset": "cobb_douglas",
+      "model": "xgboost",
+      "r2_interp": 0.9944951438097472,
+      "r2_extrap": -7.40548084974337,
+      "mse_interp": 0.0007670467661956874,
+      "mse_extrap": 0.500421172094782,
+      "train_time_s": 0.11123796499987293,
+      "formula": ""
+    },
+    {
+      "dataset": "cobb_douglas",
+      "model": "gplearn",
+      "r2_interp": 0.9819780507469852,
+      "r2_extrap": 0.3464530947269363,
+      "mse_interp": 0.0025111787515075894,
+      "mse_extrap": 0.0389089826271687,
+      "train_time_s": 14.815155302999756,
+      "formula": "log(sub(sub(sqrt(sub(0.739, sqrt(X1))), sqrt(X1)), add(X0, log(mul(X1, X0)))))"
+    },
+    {
+      "dataset": "cobb_douglas",
+      "model": "emlgam",
+      "r2_interp": 0.992223756281519,
+      "r2_extrap": 0.7465084508240245,
+      "mse_interp": 0.001083541947557489,
+      "mse_extrap": 0.015091645608666954,
+      "train_time_s": 4.418169094999939,
+      "formula": "-0.00241773834538804*log(0.583825151578694*K - 0.255614426059198) + 0.32472018589111*log(1.08066983928766*K - 0.104512787549672) + 0.763793756323562*log(0.960219649425747*L + 0.0553342457395009) - 1.0"
+    },
+    {
+      "dataset": "logistic_growth",
+      "model": "linear",
+      "r2_interp": 0.9828672816683934,
+      "r2_extrap": 0.03677564681420842,
+      "mse_interp": 0.0016516118551183684,
+      "mse_extrap": 0.17831175964159734,
+      "train_time_s": 0.0008291589997497795,
+      "formula": ""
+    },
+    {
+      "dataset": "logistic_growth",
+      "model": "ebm",
+      "r2_interp": 0.9998072829778105,
+      "r2_extrap": 0.9943530470428136,
+      "mse_interp": 1.857812125143251e-05,
+      "mse_extrap": 0.0010453619814313436,
+      "train_time_s": 0.7146061499997813,
+      "formula": ""
+    },
+    {
+      "dataset": "logistic_growth",
+      "model": "xgboost",
+      "r2_interp": 0.9994725058295584,
+      "r2_extrap": 0.9914243350623064,
+      "mse_interp": 5.0850986314300825e-05,
+      "mse_extrap": 0.0015875241319214723,
+      "train_time_s": 0.07296441800008324,
+      "formula": ""
+    },
+    {
+      "dataset": "logistic_growth",
+      "model": "gplearn",
+      "r2_interp": 0.9845401542445565,
+      "r2_extrap": 0.06103612152610771,
+      "mse_interp": 0.0014903451999725675,
+      "mse_extrap": 0.17382066894054565,
+      "train_time_s": 13.51962785600017,
+      "formula": "abs(add(0.498, mul(0.270, X0)))"
+    },
+    {
+      "dataset": "logistic_growth",
+      "model": "emlgam",
+      "r2_interp": -2.9026369399356544,
+      "r2_extrap": -1.30242855774864,
+      "mse_interp": 0.37621825745711585,
+      "mse_extrap": 0.42622477953693944,
+      "train_time_s": 0.697180582999863,
+      "formula": "0.0985838131203031*log(E - log(0.158320843704211 - 2.48842060094378*t)) - 0.0985838131203031*exp(E) + 1.22895461903391"
+    },
+    {
+      "dataset": "power_law_log",
+      "model": "linear",
+      "r2_interp": 0.961726825873543,
+      "r2_extrap": -47.713360360706965,
+      "mse_interp": 0.017131647548641844,
+      "mse_extrap": 13.975497628770043,
+      "train_time_s": 0.0008342979999724776,
+      "formula": ""
+    },
+    {
+      "dataset": "power_law_log",
+      "model": "ebm",
+      "r2_interp": 0.9996014407427138,
+      "r2_extrap": -6.302311272788182,
+      "mse_interp": 0.00017840110936486424,
+      "mse_extrap": 2.0949783205617254,
+      "train_time_s": 0.5519801010000265,
+      "formula": ""
+    },
+    {
+      "dataset": "power_law_log",
+      "model": "xgboost",
+      "r2_interp": 0.998228131587694,
+      "r2_extrap": -6.470484282847356,
+      "mse_interp": 0.0007931149123379155,
+      "mse_extrap": 2.143225895475504,
+      "train_time_s": 0.09075722800025687,
+      "formula": ""
+    },
+    {
+      "dataset": "power_law_log",
+      "model": "gplearn",
+      "r2_interp": 0.998962243358187,
+      "r2_extrap": 0.8683885481482185,
+      "mse_interp": 0.00046451545853138873,
+      "mse_extrap": 0.037758338157209,
+      "train_time_s": 14.891092568000204,
+      "formula": "add(log(X0), sqrt(add(log(X0), sqrt(add(log(X0), sqrt(sqrt(div(X0, -0.399))))))))"
+    },
+    {
+      "dataset": "power_law_log",
+      "model": "emlgam",
+      "r2_interp": 0.9893758079706803,
+      "r2_extrap": 0.8760991249856307,
+      "mse_interp": 0.004755547912854669,
+      "mse_extrap": 0.035546231509057856,
+      "train_time_s": 1.8893083099997057,
+      "formula": "1.60684330478039*log(0.964794561839537*x + 0.0756909496609548) - 1.60684330478039*E + 5.43142230480232"
+    },
+    {
+      "dataset": "competitive_inhibition",
+      "model": "linear",
+      "r2_interp": 0.9806402807079789,
+      "r2_extrap": -5.595301438084732,
+      "mse_interp": 0.021792859713393124,
+      "mse_extrap": 9.146359846606536,
+      "train_time_s": 0.0008611170001131541,
+      "formula": ""
+    },
+    {
+      "dataset": "competitive_inhibition",
+      "model": "ebm",
+      "r2_interp": 0.9976200869887875,
+      "r2_extrap": -1.0435506621981547,
+      "mse_interp": 0.0026790218185038218,
+      "mse_extrap": 2.8339947607706706,
+      "train_time_s": 0.5059066959997836,
+      "formula": ""
+    },
+    {
+      "dataset": "competitive_inhibition",
+      "model": "xgboost",
+      "r2_interp": 0.9873561677515746,
+      "r2_extrap": -1.1934694393496077,
+      "mse_interp": 0.014232916204687529,
+      "mse_extrap": 3.0419020257324068,
+      "train_time_s": 0.10902828999996927,
+      "formula": ""
+    },
+    {
+      "dataset": "competitive_inhibition",
+      "model": "gplearn",
+      "r2_interp": 0.9650486684616912,
+      "r2_extrap": 0.6957678869268694,
+      "mse_interp": 0.03934403456586166,
+      "mse_extrap": 0.4219089012356666,
+      "train_time_s": 16.50915465199978,
+      "formula": "sub(mul(add(inv(X1), inv(0.931)), sqrt(X0)), div(sub(0.820, sub(abs(mul(log(X0), mul(log(X0), log(X0)))), neg(X0))), X0))"
+    },
+    {
+      "dataset": "competitive_inhibition",
+      "model": "emlgam",
+      "r2_interp": 0.98024302543086,
+      "r2_extrap": 0.9487469404782195,
+      "mse_interp": 0.022240042257420288,
+      "mse_extrap": 0.07107771040134303,
+      "train_time_s": 4.408030792999853,
+      "formula": "-0.00683502950186247*log(-4.10376197687982*I - 3.36682322096051) + 2.5280438607333*log(1.13544625319599*S + 0.377954146016021) - 2.5280438607333*E + 6.12359383509269 + 0.000235802088343163*exp(-4.1037"
+    },
+    {
+      "dataset": "combined_gas_law",
+      "model": "linear",
+      "r2_interp": 0.8311685885302814,
+      "r2_extrap": 0.513455875500589,
+      "mse_interp": 147.24542152129405,
+      "mse_extrap": 2249.861022112552,
+      "train_time_s": 0.000893688000360271,
+      "formula": ""
+    },
+    {
+      "dataset": "combined_gas_law",
+      "model": "ebm",
+      "r2_interp": 0.9988401826007642,
+      "r2_extrap": 0.6745079528062727,
+      "mse_interp": 1.0115286033063007,
+      "mse_extrap": 1505.1294078255235,
+      "train_time_s": 5.456195759000366,
+      "formula": ""
+    },
+    {
+      "dataset": "combined_gas_law",
+      "model": "xgboost",
+      "r2_interp": 0.9968455037999073,
+      "r2_extrap": 0.6456136924512734,
+      "mse_interp": 2.751177157298546,
+      "mse_extrap": 1638.741277462978,
+      "train_time_s": 0.1064866560000155,
+      "formula": ""
+    },
+    {
+      "dataset": "combined_gas_law",
+      "model": "gplearn",
+      "r2_interp": 0.9996102009739408,
+      "r2_extrap": 0.993513338497777,
+      "mse_interp": 0.3399611565231396,
+      "mse_extrap": 29.995402559849897,
+      "train_time_s": 20.14055650399996,
+      "formula": "sub(mul(mul(neg(sub(neg(log(add(add(-0.174, add(inv(div(sub(-0.174, X1), inv(div(sub(-0.174, X1), mul(X0, 0.615))))), mul(X1, X0))), neg(inv(inv(add(X0, X0))))))), inv(div(sub(-0.174, X1), mul(X0, 0.6"
+    },
+    {
+      "dataset": "combined_gas_law",
+      "model": "emlgam",
+      "r2_interp": 0.9872849164983296,
+      "r2_extrap": 0.37850871794699004,
+      "mse_interp": 11.089392747378074,
+      "mse_extrap": 2873.8791420253146,
+      "train_time_s": 2.54033927699993,
+      "formula": "0.462001572608356*exp(0.00660413122816507*T) + 1.41314715452154*exp(0.00908125560967815*T) - 1.01642229100449*log(0.33682525304673*V - 0.178294459080437) + 4.2401765086988 + 271.395432167645*exp(-0.90"
+    }
+  ],
+  "real_world_yacht": [
+    {
+      "dataset": "yacht",
+      "model": "linear",
+      "split": "interp",
+      "r2": 0.5355467780530072,
+      "mse": 67.0355919187417,
+      "time_s": 0.0005239719998826331,
+      "formula": ""
+    },
+    {
+      "dataset": "yacht",
+      "model": "ebm",
+      "split": "interp",
+      "r2": 0.99188140916916,
+      "mse": 1.1717747152447158,
+      "time_s": 0.3814210290001938,
+      "formula": ""
+    },
+    {
+      "dataset": "yacht",
+      "model": "xgboost",
+      "split": "interp",
+      "r2": 0.9915490509862267,
+      "mse": 1.219744729164681,
+      "time_s": 0.06539005599961456,
+      "formula": ""
+    },
+    {
+      "dataset": "yacht",
+      "model": "gplearn",
+      "split": "interp",
+      "r2": 0.9922268675453085,
+      "mse": 1.121913920585303,
+      "time_s": 24.7856467470001,
+      "formula": "add(div(sub(add(abs(log(div(sub(X0, 0.423), neg(0.744)))), sqrt(sub(add(div(sub(div(log(div(inv(log(0.010)), sub(0.591, X0))), log(div(0.350, X0))), inv(neg(div(0.350, X0)))), div(-0.985, X0)), sub(X0, 0.423)), abs(log(div(sub(X0, 0.423), neg(0.744))))))), mul(neg(div(0.350, X0)), sqrt(sqrt(sqrt(X0)"
+    },
+    {
+      "dataset": "yacht",
+      "model": "emlgam",
+      "split": "interp",
+      "r2": 0.6689124122975211,
+      "mse": 47.7866260148735,
+      "time_s": 2.3671754739998505,
+      "formula": "10.9146617297424*exp(0.114851048582533*exp(6.2939158352172*froude_number)) - 25.2174510083658"
+    },
+    {
+      "dataset": "yacht",
+      "model": "linear",
+      "split": "extrap",
+      "r2": -0.8235527939924427,
+      "mse": 509.1137262093629,
+      "time_s": 0.00063479099981123,
+      "formula": ""
+    },
+    {
+      "dataset": "yacht",
+      "model": "ebm",
+      "split": "extrap",
+      "r2": -1.0722486310471075,
+      "mse": 578.5465743905501,
+      "time_s": 0.14760870200007048,
+      "formula": ""
+    },
+    {
+      "dataset": "yacht",
+      "model": "xgboost",
+      "split": "extrap",
+      "r2": -1.0662244298846795,
+      "mse": 576.8646908106819,
+      "time_s": 0.043188979999740695,
+      "formula": ""
+    },
+    {
+      "dataset": "yacht",
+      "model": "gplearn",
+      "split": "extrap",
+      "r2": -4.585885838304195,
+      "mse": 1559.5112807745477,
+      "time_s": 15.373818793999817,
+      "formula": "sub(inv(log(log(X0))), sqrt(add(0.848, 0.877)))"
+    },
+    {
+      "dataset": "yacht",
+      "model": "emlgam",
+      "split": "extrap",
+      "r2": 0.6567599360782068,
+      "mse": 95.8284446182523,
+      "time_s": 2.1934704519999286,
+      "formula": "0.0734557262569244*exp(13.4747881890411*froude_number) - 0.298211963231235"
+    }
+  ],
+  "real_world_auto_mpg": [
+    {
+      "dataset": "auto_mpg",
+      "model": "linear",
+      "split": "interp",
+      "r2": 0.8363664681024058,
+      "mse": 10.170693695667023,
+      "time_s": 0.0006483500001195353,
+      "formula": ""
+    },
+    {
+      "dataset": "auto_mpg",
+      "model": "ebm",
+      "split": "interp",
+      "r2": 0.9125569773031285,
+      "mse": 5.435048607456083,
+      "time_s": 0.9074009579999256,
+      "formula": ""
+    },
+    {
+      "dataset": "auto_mpg",
+      "model": "xgboost",
+      "split": "interp",
+      "r2": 0.8852282055472989,
+      "mse": 7.133677020496073,
+      "time_s": 0.13692326599993976,
+      "formula": ""
+    },
+    {
+      "dataset": "auto_mpg",
+      "model": "gplearn",
+      "split": "interp",
+      "r2": 0.8502674031338698,
+      "mse": 9.306676702029872,
+      "time_s": 16.549460370999896,
+      "formula": "add(X6, add(mul(div(inv(div(X0, X5)), X2), X5), sqrt(sub(X5, mul(div(mul(div(mul(div(mul(div(X4, X2), X5), X2), X5), X2), sub(X5, inv(div(X0, X5)))), X2), X5)))))"
+    },
+    {
+      "dataset": "auto_mpg",
+      "model": "emlgam",
+      "split": "interp",
+      "r2": 0.5977979799274458,
+      "mse": 24.998993192278643,
+      "time_s": 44.38494513100022,
+      "formula": "0.436959557977108*exp(0.00583876192166647*displacement) + 0.116815430741907*exp(0.150289119310056*origin) + 0.0513940812395577*exp(0.166349223793769*origin) + 0.919754033786842*exp(0.366114853589555*exp(-0.00282475940021187*horsepower)) - 0.100645014036507*log(-1.89399106540762*acceleration - 0.7509"
+    },
+    {
+      "dataset": "auto_mpg",
+      "model": "linear",
+      "split": "extrap",
+      "r2": -2.4251031617013274,
+      "mse": 46.16391253504898,
+      "time_s": 0.0006962099996599136,
+      "formula": ""
+    },
+    {
+      "dataset": "auto_mpg",
+      "model": "ebm",
+      "split": "extrap",
+      "r2": 0.4157805566264372,
+      "mse": 7.874173130532982,
+      "time_s": 2.9405736399999114,
+      "formula": ""
+    },
+    {
+      "dataset": "auto_mpg",
+      "model": "xgboost",
+      "split": "extrap",
+      "r2": -0.36289775552641546,
+      "mse": 18.369284021531147,
+      "time_s": 0.10873209900000802,
+      "formula": ""
+    },
+    {
+      "dataset": "auto_mpg",
+      "model": "gplearn",
+      "split": "extrap",
+      "r2": -0.9183733010225956,
+      "mse": 25.856043773581025,
+      "time_s": 14.670373148999715,
+      "formula": "add(X6, add(sqrt(X5), add(mul(div(X4, X2), X5), abs(log(div(X4, X5))))))"
+    },
+    {
+      "dataset": "auto_mpg",
+      "model": "emlgam",
+      "split": "extrap",
+      "r2": -56.42605260910385,
+      "mse": 773.9945761408754,
+      "time_s": 41.91027002100009,
+      "formula": "-0.0203614239855929*exp(0.389011491678274*exp(0.000474179651471977*displacement)) + 0.583508323210167*log(0.457292519487899*acceleration - 0.344141486981542) + 1.09566718235528*log(0.72060997712911*acceleration - 0.0734192837858386) - 8.76467855321095*log(0.786065046316436*acceleration - 0.668305558"
+    }
+  ],
+  "real_world_concrete": [
+    {
+      "dataset": "concrete",
+      "model": "linear",
+      "split": "interp",
+      "r2": 0.5246569892905673,
+      "mse": 125.19788324300437,
+      "time_s": 0.0007034999998722924,
+      "formula": ""
+    },
+    {
+      "dataset": "concrete",
+      "model": "ebm",
+      "split": "interp",
+      "r2": 0.859410656146069,
+      "mse": 37.02902506290233,
+      "time_s": 18.753825563999726,
+      "formula": ""
+    },
+    {
+      "dataset": "concrete",
+      "model": "xgboost",
+      "split": "interp",
+      "r2": 0.867665453520986,
+      "mse": 34.854841084900684,
+      "time_s": 0.10908586599998671,
+      "formula": ""
+    },
+    {
+      "dataset": "concrete",
+      "model": "gplearn",
+      "split": "interp",
+      "r2": 0.5179110302218942,
+      "mse": 126.97466290908446,
+      "time_s": 22.960284087999753,
+      "formula": "sqrt(add(mul(log(sqrt(0.137)), mul(sqrt(X2), sub(sqrt(sub(sub(sub(mul(sqrt(sub(sub(mul(sqrt(sub(mul(sqrt(X2), sub(div(X2, 0.603), sqrt(sub(mul(sqrt(X2), sub(div(log(X0), 0.118), sub(mul(sqrt(X2), div(X2, 0.603)), div(X1, 0.153)))), div(X1, 0.153))))), div(X1, 0.153))), sub(div(X2, 0.603), div(X1, sq"
+    },
+    {
+      "dataset": "concrete",
+      "model": "emlgam",
+      "split": "interp",
+      "r2": 0.42725890053710947,
+      "mse": 150.85101007797772,
+      "time_s": 11.194379892000143,
+      "formula": "-3.45177987635346*exp(0.00826917348073958*water) - 2.00922840826179*exp(0.00833807549364413*water) + 1.09648025677922*log(0.014896922048098*age - 0.591123505517138) - 1.52158063345857*log(0.0162586508760956*age - 0.48521199673099) + 1.18255588767806*log(0.016370873694323*age - 0.543443672351756) + 3"
+    },
+    {
+      "dataset": "concrete",
+      "model": "linear",
+      "split": "extrap",
+      "r2": -44.968633180909045,
+      "mse": 8309.206096447435,
+      "time_s": 0.0006902700001774065,
+      "formula": ""
+    },
+    {
+      "dataset": "concrete",
+      "model": "ebm",
+      "split": "extrap",
+      "r2": 0.48823079152963833,
+      "mse": 92.50646653470749,
+      "time_s": 27.58155504599972,
+      "formula": ""
+    },
+    {
+      "dataset": "concrete",
+      "model": "xgboost",
+      "split": "extrap",
+      "r2": 0.5239700047380057,
+      "mse": 86.04631169163221,
+      "time_s": 0.11762985599989406,
+      "formula": ""
+    },
+    {
+      "dataset": "concrete",
+      "model": "gplearn",
+      "split": "extrap",
+      "r2": -6.468449623638373,
+      "mse": 1349.9833005589337,
+      "time_s": 21.714045690999683,
+      "formula": "sqrt(div(div(add(abs(X2), log(div(div(div(add(div(div(div(div(add(div(div(div(div(add(div(div(add(abs(X2), div(add(inv(X0), log(div(X1, X0))), div(X1, X0))), div(X1, X0)), div(log(sqrt(div(X1, X0))), X0)), div(X1, X0)), div(X1, X0)), div(X1, X0)), div(X1, X0)), div(X1, X0)), div(X1, X0)), div(X1, X0"
+    },
+    {
+      "dataset": "concrete",
+      "model": "emlgam",
+      "split": "extrap",
+      "r2": -5892875.960742727,
+      "mse": 1065185666.3894349,
+      "time_s": 2.130920986000092,
+      "formula": "2.60585661067711*exp(0.0637525683052845*age) - 0.140920818502562*exp(0.01480106555099*water) - 0.816318030570596*exp(0.0148700670610917*water) + 0.127998295855794*log(-0.214916362285788*age - 1.31554509475295) + 0.275992506488558*log(0.0470271726012093*age - 0.532918466765546) + 22.6398966288632*log"
+    }
+  ],
+  "real_world_airfoil": [
+    {
+      "dataset": "airfoil",
+      "model": "linear",
+      "split": "interp",
+      "r2": 0.20140239890923894,
+      "mse": 37.56524043174086,
+      "time_s": 0.0005870509999112983,
+      "formula": ""
+    },
+    {
+      "dataset": "airfoil",
+      "model": "ebm",
+      "split": "interp",
+      "r2": 0.4388869847178698,
+      "mse": 26.39420065833223,
+      "time_s": 0.37120460100004493,
+      "formula": ""
+    },
+    {
+      "dataset": "airfoil",
+      "model": "xgboost",
+      "split": "interp",
+      "r2": 0.4116598311915862,
+      "mse": 27.674939001510047,
+      "time_s": 0.09732048600017151,
+      "formula": ""
+    },
+    {
+      "dataset": "airfoil",
+      "model": "gplearn",
+      "split": "interp",
+      "r2": 0.23901407131012253,
+      "mse": 35.79602460283119,
+      "time_s": 32.740131048999956,
+      "formula": "div(add(log(mul(mul(div(log(sub(neg(mul(abs(X0), neg(add(div(mul(div(log(sub(add(X0, X1), mul(div(log(sub(neg(mul(abs(X0), neg(add(div(add(neg(0.351), X0), add(-0.807, X1)), div(add(0.701, X0), neg(0.913)))))), inv(X0))), neg(add(neg(add(div(X1, X0), abs(-0.109))), inv(X0)))), div(log(add(neg(-0.182"
+    },
+    {
+      "dataset": "airfoil",
+      "model": "emlgam",
+      "split": "interp",
+      "r2": -1.1813317087044726,
+      "mse": 102.60768375329849,
+      "time_s": 1.3197594350003783,
+      "formula": "0.202841463547581*exp(15.5376541854533*chord_length) - 0.24542354446701*log(15.5376541854533*chord_length - 0.190560764716202) - 1.27961589980209*log(15.7749825203352*chord_length + 0.451872249522669) + 1.27961589980209*E + 109.624433043712 + 15.2887128293489*exp(-0.000159196802602026*frequency)"
+    },
+    {
+      "dataset": "airfoil",
+      "model": "linear",
+      "split": "extrap",
+      "r2": -0.632183511134867,
+      "mse": 94.85232129674395,
+      "time_s": 0.0007099000004018308,
+      "formula": ""
+    },
+    {
+      "dataset": "airfoil",
+      "model": "ebm",
+      "split": "extrap",
+      "r2": -0.057114590629318895,
+      "mse": 61.43290390682229,
+      "time_s": 0.19010494100029973,
+      "formula": ""
+    },
+    {
+      "dataset": "airfoil",
+      "model": "xgboost",
+      "split": "extrap",
+      "r2": -0.021861436137797785,
+      "mse": 59.38421053763827,
+      "time_s": 0.08475774399994407,
+      "formula": ""
+    },
+    {
+      "dataset": "airfoil",
+      "model": "gplearn",
+      "split": "extrap",
+      "r2": -0.925193590720351,
+      "mse": 111.88023882098264,
+      "time_s": 16.656491794999965,
+      "formula": "add(inv(0.009), sqrt(mul(sqrt(log(mul(X0, X0))), add(sqrt(log(mul(X0, X0))), inv(0.009)))))"
+    },
+    {
+      "dataset": "airfoil",
+      "model": "emlgam",
+      "split": "extrap",
+      "r2": -1.8791353436760074,
+      "mse": 167.3173811719768,
+      "time_s": 1.2206888109999454,
+      "formula": "0.0311715919106466*exp(6.14086525790299*chord_length) - 0.0579432242864411*log(-0.00312004206354472*frequency - 0.338910098856252) + 131.065710290943 - 12.4721826823854*exp(-0.00340683433039236*frequency) - 7.6968717679778*exp(-33.6316801680884*chord_length)"
+    }
+  ],
+  "scalability_20_features": [
+    {
+      "model": "linear",
+      "r2": 0.9552413891402667,
+      "time_s": 0.0020440810003492516,
+      "n_params": 0,
+      "selected_pairs": ""
+    },
+    {
+      "model": "ebm",
+      "r2": 0.9975874351436086,
+      "time_s": 13.127224104000106,
+      "n_params": 0,
+      "selected_pairs": ""
+    },
+    {
+      "model": "xgboost",
+      "r2": 0.970528159135494,
+      "time_s": 0.3860837189999984,
+      "n_params": 0,
+      "selected_pairs": ""
+    },
+    {
+      "model": "gplearn",
+      "r2": 0.8531553698692979,
+      "time_s": 17.8233288790002,
+      "n_params": 0,
+      "selected_pairs": ""
+    },
+    {
+      "model": "emlgam",
+      "r2": 0.9763164259676013,
+      "time_s": 31.560080353000103,
+      "n_params": 466,
+      "selected_pairs": "[(3, 4), (5, 15), (16, 17), (7, 18), (5, 16)]"
+    }
+  ]
+}
