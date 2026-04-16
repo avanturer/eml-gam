@@ -1,0 +1,19 @@
+{
+  "max_depth": 3,
+  "precision_digits": 150,
+  "n_trees": 1806,
+  "test_points": [
+    0.5,
+    1.4
+  ],
+  "zero_threshold": "1e-100",
+  "count_numerically_zero": 0,
+  "infimum_max_abs_f_across_test_points": "1.9182476927080849941e-7",
+  "attained_by": "psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1)))",
+  "attained_by_depth": 3,
+  "elapsed_s": 0.13530405499841436,
+  "suspicious_trees": [],
+  "depth_4_min_max_abs": "2.3528421881207564446e-21",
+  "depth_4_argmin": "psi(psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))),psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))))",
+  "depth_4_stream_elapsed_s": 246.62212138400173
+}

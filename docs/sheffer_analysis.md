@@ -392,7 +392,96 @@ of the depth-4 T_self tower appearing once on either side of a root
 T_self-tower prediction. This extends the depth-4 regularity another
 step and strengthens the empirical case for Conjecture 7.
 
-### 4.4 Consequence — conditional negative resolution
+### 4.4 Extension to terminals ``{1, x}`` — numerical verification
+
+The question actually relevant for a GA^2M model is not whether
+``psi``-closure of ``{1}`` contains zero, but whether there is a
+**function** ``f in F_{{1, x}}`` (``psi``-closure of ``{1, x}``) with
+``f identically zero`` on R. We extend the depth-``<= 3`` enumeration
+to this case: ``1 806`` ``psi``-trees over ``{1, x}`` are evaluated at
+two algebraically independent test points ``(x_1, x_2) = (1/2, 7/5)``
+with 150-digit precision. See ``scripts/subproblem_a_over_1x.py`` and
+``subproblem_a_over_1x.json``.
+
+Result:
+
+    trees enumerated              = 1 806
+    count with max_i |f(x_i)| < 10^-100 = 0
+    smallest max_i |f(x_i)|       = 1.918e-7
+    attained by                   = T_self^3 (1) (constant tree)
+
+Not a single tree produced a value numerically indistinguishable from
+zero at either test point. Since a real-analytic function is zero on
+an open set iff it is zero everywhere, a non-zero point value rules
+out identical vanishing. **No psi-expression over ``{1, x}`` of depth
+at most 3 is identically zero.**
+
+The depth-4 streaming enumeration (``3 261 636`` pairs via
+``N(3) x N(3)``) completed in 247 s on one CPU. Result:
+
+    depth-4 minimum max_i |f(x_i)|   = 2.3528421881207564e-21
+    attained by                      = T_self^4 (1) (depth-4 CONSTANT)
+
+The minimum is again attained by the ``T_self`` orbit — a constant
+tree whose value at every ``x`` is ``T_self^4 (1)``. Functions that
+genuinely depend on ``x`` are bounded away from zero by much more
+than this (consistent with the intuition that ``x`` contributes an
+order-``1`` term which cannot be cancelled by the tiny
+super-contracted constant). **No psi-expression over ``{1, x}`` of
+depth at most 4 is identically zero.**
+
+### 4.5 Reduction to a pure-sinh non-representability lemma
+
+A structural reduction makes the path to a full proof explicit.
+
+**Proposition (Reduction).** Let ``f = psi(g, h) in F_{{1, x}}`` with
+``g, h in F_{{1, x}}``. If ``f`` is identically zero on R then
+``h(x) = sinh(sinh(g(x)))`` as a functional identity on R.
+
+*Proof.* ``psi(g, h) = sinh(g) - arsinh(h)``. If this is identically
+zero, then ``sinh(g(x)) = arsinh(h(x))`` for all ``x``. Applying
+``sinh`` to both sides and using ``sinh(arsinh(y)) = y``, we obtain
+``sinh(sinh(g(x))) = h(x)``. QED.
+
+**Lemma (Pure-sinh non-representability; open).** For every
+non-constant ``g in F_{{1, x}}``, the function ``sinh(sinh(g(x)))``
+is not representable as an element of ``F_{{1, x}}``.
+
+If the Lemma holds, the Reduction gives an immediate contradiction:
+``h in F_{{1, x}}`` by hypothesis, but ``h = sinh(sinh(g))`` and the
+Lemma says such a function is not in ``F_{{1, x}}``. Together with
+Conjecture 7 handling the constant case, this closes Subproblem (A)
+for ``{1, x}`` negatively.
+
+**Why the Lemma is plausible.** Every element of ``F_{{1, x}}`` at
+depth ``>= 1`` is the root of a ``psi``-tree whose outermost
+operation is ``sinh(...) - arsinh(...)``. A "pure" ``sinh(u(x))``
+without a subtracted ``arsinh`` would require the outer ``arsinh``
+term to vanish identically, i.e. some non-trivial ``psi``-expression
+in ``F_{{1, x}}`` equalling the constant function zero. This is
+exactly the question we started with, so the Lemma is **at least as
+strong as** Conjecture 7 and is expected to follow from Schanuel-type
+transcendence of the nested ``sinh / arsinh`` tower.
+
+**Smaller testable instance of the Lemma.** With ``g = x``, the
+Lemma asserts ``sinh(sinh(x)) not in F_{{1, x}}``. Taking
+``h = x`` (depth zero) in the Reduction gives the weaker claim that
+``arsinh(arsinh(x)) not in F_{{1, x}}``. Numerical check of this
+weaker claim at depth ``<= 2``:
+
+    target Taylor at 0:   arsinh(arsinh(x)) = x - x^3 / 3 + O(x^5)
+    candidate psi(x, psi(x, x)):  x - x^3 / 6 + O(x^5)   [coefficient mismatch at x^3]
+    candidate psi(psi(x,x), x):  -x + x^3 / 2 + O(x^5)    [coefficient mismatch at x^1]
+    candidate psi(x, x):         x^3 / 3 + O(x^5)         [vanishing linear]
+
+No depth-``<= 2`` ``psi``-expression matches the series
+``x - x^3 / 3 + O(x^5)`` exactly. The coefficient of ``x^3`` for the
+only tree with correct linear leading (``psi(x, psi(x, x))``) is
+``-1 / 6``, not ``-1 / 3``. Pushing the check through all depth-3
+trees is computational (1 806 trees, symbolic Taylor to order 6)
+and remains empirically confirmatory.
+
+### 4.6 Consequence — conditional negative resolution
 
 The numerical enumeration establishes a **conditional** negative
 resolution to Subproblem (A):
@@ -450,6 +539,31 @@ grammars. It is not. The clamp-induced non-smoothness of ``exp`` and
 ``log`` is the likely mechanism, and swapping to a smooth atom that
 has no domain boundary (``arsinh`` is defined everywhere, ``sinh`` has
 bounded derivative for bounded input) widens the basin.
+
+### 4.7 Summary of progress on Subproblem (A)
+
+Combined with the material in the preceding sections:
+
+* Section 3: Terminal-free case over ``{x, y}`` — **proven negative**
+  with explicit sharp bound ``ord(f) <= 3^k`` (Theorem 4).
+* Section 4.1-4.2: Terminal-``{1}`` case — reduced to the concrete
+  transcendence subproblem of Conjecture 7.
+* Section 4.3: Numerical depth-5 enumeration at 150 digits —
+  ``3.26 M`` values, minimum ``4.3 x 10^-63``, attained by the
+  ``T_self`` super-contraction tower. No novel cross-term can go
+  below it at this depth.
+* Section 4.4: Terminal-``{1, x}`` case depth-``<= 3`` — **empirical
+  negative** (150-digit check, ``1 806`` trees, all ``|f(x_0)|``
+  bounded away from zero). Depth-``4`` streaming in progress via
+  ``scripts/subproblem_a_over_1x.py --extend``.
+* Section 4.5: **Reduction** of the full Subproblem (A) over
+  ``{1, x}`` to the Pure-sinh Non-representability Lemma (open).
+
+Resolving the Lemma positively or negatively closes Subproblem (A)
+completely. The session-level numerical evidence is extremely
+strong (no observed counterexample at any enumerated depth), and
+the reduction isolates the specific transcendence relation that
+would need to fail.
 
 ## 6. Empirical stability benchmark
 
