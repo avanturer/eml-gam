@@ -1,0 +1,13 @@
+{
+  "max_depth": 4,
+  "precision_digits": 150,
+  "n_trees_Fc": 1806,
+  "n_distinct_values": 677,
+  "n_targets": 677,
+  "worst_case_min_distance": "4.3416733082615949304217947731e-63",
+  "target_min_distances_percentiles": {
+    "min": "4.34167330826159e-63",
+    "median": "0.00401878327278092",
+    "max": "48799837484.3839"
+  }
+}

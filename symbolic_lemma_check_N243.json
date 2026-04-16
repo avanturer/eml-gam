@@ -1,0 +1,11 @@
+{
+  "N": 243,
+  "P": 2147483647,
+  "n_trees_F0_le_4": 1806,
+  "n_distinct_taylor": 677,
+  "n_targets": 677,
+  "n_hits_modp": 0,
+  "elapsed_enum_s": 305.48029955100355,
+  "elapsed_targets_s": 151.21438252699954,
+  "hits_sample": []
+}
