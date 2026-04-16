@@ -46,8 +46,15 @@ implementation:
    §4.2). A full-enumeration numerical check at 150-digit precision
    confirms that no ψ-expression of depth ≤ 5 over `{1}` reaches 0
    (minimum observed `|value|` at depth 5 is 4.34×10⁻⁶³, achieved
-   exactly by the `T_self` tower of Proposition 6). This is
-   empirical evidence for Conjecture 7, not a proof.
+   exactly by the `T_self` tower of Proposition 6). The
+   terminal-{1,x} case (functions) is reduced to a concrete
+   **Pure-sinh Non-representability Lemma** (§4.5), which is
+   **proved rigorously at depth ≤ 4** via exact rational Taylor
+   arithmetic on the subring `F_0 ⊂ F_{{1,x}}` of functions vanishing
+   at 0 (§4.5.2). The entire infinite `T_self^k` self-tree family is
+   closed analytically at **all** depths via a closed-form identity
+   `c_{k+1} = c_k³/3 = 3^{-(3^{k+1}-1)/2}` for the leading
+   coefficient of the `sinh(sinh(·))` correction (§4.5.3).
 5. **Stability machinery** — adaptive multi-start with warm-start
    rotation, a NaN-abort guard, and an optional extrapolation penalty —
    that eliminates the previously-reported divergence on bivariate
