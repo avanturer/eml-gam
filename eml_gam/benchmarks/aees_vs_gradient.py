@@ -25,7 +25,7 @@ from dataclasses import asdict, dataclass
 import numpy as np
 import torch
 
-from ..atlas_expansion import aees_search
+from ..atlas_expansion import aees_search, aees_search_unbranched
 from ..eml_tree import EMLTree
 from ..primitives import default_atlas, warm_start_tree
 from ..train import TrainConfig, train_tree
@@ -156,11 +156,36 @@ def _aees(depth: int) -> RecoveryRow:
     )
 
 
+def _aees_unbranched(depth: int) -> RecoveryRow:
+    """Unbranched AEES — scales to depth 8+ on unbranched targets."""
+    x, y = _target_data(depth)
+    t0 = time.perf_counter()
+    top = aees_search_unbranched(x, y, depth=depth, top_k=1, verbose=False)
+    elapsed = time.perf_counter() - t0
+    best_r2 = top[0].r2 if top else -np.inf
+    recovered = np.isfinite(best_r2) and best_r2 >= 0.999
+    return RecoveryRow(
+        depth=depth, strategy="aees_unbranched",
+        n_trials=1, n_recovered=int(recovered),
+        success_rate=1.0 if recovered else 0.0,
+        median_r2=best_r2,
+        time_s_per_trial=elapsed,
+    )
+
+
 def run_comparison(
-    depths: tuple[int, ...] = (1, 2, 3),
+    depths: tuple[int, ...] = (1, 2, 3, 4, 5, 6),
     n_gd_trials: int = 20,
     verbose: bool = True,
+    include_full_aees_up_to: int = 3,
 ) -> list[RecoveryRow]:
+    """Compare all four recovery strategies on the landscape target family.
+
+    ``include_full_aees_up_to`` caps the depth at which the exhaustive
+    (branched) AEES is run — beyond depth 3 the state space blows up
+    combinatorially (~10^9 at depth 4) and only the unbranched variant
+    remains tractable.
+    """
     rows: list[RecoveryRow] = []
     if verbose:
         print(f"{'=' * 76}")
@@ -171,15 +196,15 @@ def run_comparison(
             f"{'success':>8}  {'median R2':>12}  {'time/trial':>12}"
         )
     for depth in depths:
-        for strat_fn in (_random_init_gd, _atlas_warm_start, _aees):
-            if strat_fn is _random_init_gd:
-                r = strat_fn(depth, n_trials=n_gd_trials)
-            elif strat_fn is _atlas_warm_start:
-                r = strat_fn(depth, n_trials=min(n_gd_trials, 5))
-            else:
-                r = strat_fn(depth)
-            rows.append(r)
-            if verbose:
+        new_rows: list[RecoveryRow] = []
+        new_rows.append(_random_init_gd(depth, n_trials=n_gd_trials))
+        new_rows.append(_atlas_warm_start(depth, n_trials=min(n_gd_trials, 5)))
+        if depth <= include_full_aees_up_to:
+            new_rows.append(_aees(depth))
+        new_rows.append(_aees_unbranched(depth))
+        rows.extend(new_rows)
+        if verbose:
+            for r in new_rows:
                 print(
                     f"  {r.depth:>5}  {r.strategy:<18}  "
                     f"{r.n_recovered}/{r.n_trials:<5}  "

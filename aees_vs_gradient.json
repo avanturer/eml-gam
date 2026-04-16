@@ -6,7 +6,7 @@
     "n_recovered": 20,
     "success_rate": 1.0,
     "median_r2": 1.0,
-    "time_s_per_trial": 1.2494828623499417
+    "time_s_per_trial": 1.299563989049966
   },
   {
     "depth": 1,
@@ -15,7 +15,7 @@
     "n_recovered": 5,
     "success_rate": 1.0,
     "median_r2": 0.9999789896054104,
-    "time_s_per_trial": 0.005105138599901693
+    "time_s_per_trial": 0.005988256400087266
   },
   {
     "depth": 1,
@@ -24,7 +24,16 @@
     "n_recovered": 1,
     "success_rate": 1.0,
     "median_r2": 1.0,
-    "time_s_per_trial": 0.0012578870009747334
+    "time_s_per_trial": 0.000898756999959005
+  },
+  {
+    "depth": 1,
+    "strategy": "aees_unbranched",
+    "n_trials": 1,
+    "n_recovered": 1,
+    "success_rate": 1.0,
+    "median_r2": 1.0,
+    "time_s_per_trial": 0.0008802270003798185
   },
   {
     "depth": 2,
@@ -33,7 +42,7 @@
     "n_recovered": 3,
     "success_rate": 0.15,
     "median_r2": -7.801165284945865,
-    "time_s_per_trial": 0.9934295481500157
+    "time_s_per_trial": 1.0256551483500516
   },
   {
     "depth": 2,
@@ -42,7 +51,7 @@
     "n_recovered": 0,
     "success_rate": 0.0,
     "median_r2": 0.9110696358323613,
-    "time_s_per_trial": 0.01787260179989971
+    "time_s_per_trial": 0.01775398639983905
   },
   {
     "depth": 2,
@@ -51,7 +60,16 @@
     "n_recovered": 1,
     "success_rate": 1.0,
     "median_r2": 1.0,
-    "time_s_per_trial": 0.045062309998684213
+    "time_s_per_trial": 0.04398005899929558
+  },
+  {
+    "depth": 2,
+    "strategy": "aees_unbranched",
+    "n_trials": 1,
+    "n_recovered": 1,
+    "success_rate": 1.0,
+    "median_r2": 1.0,
+    "time_s_per_trial": 0.004742912999063265
   },
   {
     "depth": 3,
@@ -60,7 +78,7 @@
     "n_recovered": 0,
     "success_rate": 0.0,
     "median_r2": -26.42188424146988,
-    "time_s_per_trial": 1.9200294532000044
+    "time_s_per_trial": 1.9271354688000428
   },
   {
     "depth": 3,
@@ -78,6 +96,96 @@
     "n_recovered": 1,
     "success_rate": 1.0,
     "median_r2": 1.0,
-    "time_s_per_trial": 74.98924439199982
+    "time_s_per_trial": 76.48337658399942
+  },
+  {
+    "depth": 3,
+    "strategy": "aees_unbranched",
+    "n_trials": 1,
+    "n_recovered": 1,
+    "success_rate": 1.0,
+    "median_r2": 1.0,
+    "time_s_per_trial": 0.024209317998611368
+  },
+  {
+    "depth": 4,
+    "strategy": "random_init_gd",
+    "n_trials": 20,
+    "n_recovered": 0,
+    "success_rate": 0.0,
+    "median_r2": -852.137510131494,
+    "time_s_per_trial": 2.477501209499951
+  },
+  {
+    "depth": 4,
+    "strategy": "atlas_warm",
+    "n_trials": 5,
+    "n_recovered": 0,
+    "success_rate": 0.0,
+    "median_r2": -Infinity,
+    "time_s_per_trial": 0.0
+  },
+  {
+    "depth": 4,
+    "strategy": "aees_unbranched",
+    "n_trials": 1,
+    "n_recovered": 1,
+    "success_rate": 1.0,
+    "median_r2": 1.0,
+    "time_s_per_trial": 0.17528554199998325
+  },
+  {
+    "depth": 5,
+    "strategy": "random_init_gd",
+    "n_trials": 20,
+    "n_recovered": 0,
+    "success_rate": 0.0,
+    "median_r2": -18.707354680513482,
+    "time_s_per_trial": 2.576487967849971
+  },
+  {
+    "depth": 5,
+    "strategy": "atlas_warm",
+    "n_trials": 5,
+    "n_recovered": 0,
+    "success_rate": 0.0,
+    "median_r2": -Infinity,
+    "time_s_per_trial": 0.0
+  },
+  {
+    "depth": 5,
+    "strategy": "aees_unbranched",
+    "n_trials": 1,
+    "n_recovered": 1,
+    "success_rate": 1.0,
+    "median_r2": 1.0,
+    "time_s_per_trial": 0.9067625179995957
+  },
+  {
+    "depth": 6,
+    "strategy": "random_init_gd",
+    "n_trials": 20,
+    "n_recovered": 1,
+    "success_rate": 0.05,
+    "median_r2": -109166135797313.44,
+    "time_s_per_trial": 4.546869289750066
+  },
+  {
+    "depth": 6,
+    "strategy": "atlas_warm",
+    "n_trials": 5,
+    "n_recovered": 0,
+    "success_rate": 0.0,
+    "median_r2": -Infinity,
+    "time_s_per_trial": 0.0
+  },
+  {
+    "depth": 6,
+    "strategy": "aees_unbranched",
+    "n_trials": 1,
+    "n_recovered": 1,
+    "success_rate": 1.0,
+    "median_r2": 1.0,
+    "time_s_per_trial": 4.327496470001279
   }
 ]

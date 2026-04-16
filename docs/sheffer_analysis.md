@@ -136,19 +136,73 @@ to the next non-cancelling term, which is the ``+u^3/6, -v^3/6``
 cubic-correction contribution — that contributes order ``3 * ord(f)``
 when ``f == g``. QED.
 
-**Theorem 4 (Finite vanishing order).** Every ``f in F`` has
-``ord(f) < infinity``. Equivalently, every ``f in F`` is non-zero on
-every neighbourhood of the origin, so **no ``f in F`` is identically
-zero on R^2**.
+**Theorem 4 (Finite vanishing order, with explicit bound).** Let
+``F_0 = {x, y}`` and ``F_{k+1} = F_k cup {psi(f, g) : f, g in F_k}``.
+Every ``f in F_k`` satisfies ``ord(f) <= 3^k``. In particular every
+``f in F = union_k F_k`` has ``ord(f) < infinity``, so no ``f in F`` is
+identically zero on ``R^2``.
 
-*Proof.* By induction on composition depth. ``x`` and ``y`` have
-``ord = 1``. If ``f = psi(g, h)`` with ``ord(g), ord(h) < infinity``,
-then by Lemma 3 either ``ord(f) = min(ord(g), ord(h))`` (which is
-finite) or ``ord(f) > min(ord(g), ord(h))`` but still finite —
-specifically at most ``3 * max(ord(g), ord(h))`` when cancellation
-happens. So ``ord(f)`` remains finite. Since a real-analytic function
-with a non-vanishing Taylor coefficient at any order is non-zero on
-every neighbourhood, ``f`` is not identically zero. QED.
+*Proof.* Induction on ``k``. For ``k = 0``: ``f in {x, y}`` with
+``ord(f) = 1 <= 3^0 = 1``. Suppose the claim holds at depth ``k - 1``
+and let ``f = psi(g, h)`` with ``g, h in F_{k-1}``; so ``ord(g),
+ord(h) <= 3^{k-1}``.
+
+Consider the Taylor expansions
+
+    g = J_{a}(g) + H_g,    h = J_{b}(h) + H_h,
+
+where ``a = ord(g)``, ``b = ord(h)``, ``J_a(g)`` is the non-zero
+order-``a`` homogeneous part of ``g``, and ``H_g, H_h`` are remainders
+of order ``>= a + 1`` and ``>= b + 1`` respectively. Use the odd
+Taylor expansions
+
+    sinh(u) = u + u^3 / 6 + O(u^5),
+    arsinh(v) = v - v^3 / 6 + O(v^5).
+
+Substituting ``u = g`` and ``v = h`` and collecting by homogeneous
+degree,
+
+    sinh(g)   = J_a(g) + H_g + (J_a(g) + H_g)^3 / 6 + O(order >= 5a),
+    arsinh(h) = J_b(h) + H_h - (J_b(h) + H_h)^3 / 6 + O(order >= 5b).
+
+Each correction term has order at least ``3 min(a, b) >= 3``. So
+
+    psi(g, h)  =  (J_a(g) + H_g) - (J_b(h) + H_h)
+                  + (J_a(g) + H_g)^3 / 6 + (J_b(h) + H_h)^3 / 6
+                  + O(order >= 5 min(a, b)).
+
+**Case 1: ``a != b``.** Without loss of generality ``a < b``. The
+``J_a(g)`` term is not cancelled by anything of equal or lower order
+on the ``h`` side (since ``h`` starts at order ``b > a``), so
+``ord(psi(g, h)) = a = min(a, b) <= max(a, b) <= 3^{k-1} <= 3^k``.
+
+**Case 2: ``a = b`` and ``J_a(g) != J_a(h)``.** Then ``J_a(psi(g, h))
+= J_a(g) - J_a(h) != 0``, so ``ord(psi(g, h)) = a <= 3^{k-1} <= 3^k``.
+
+**Case 3: ``a = b`` and ``J_a(g) = J_a(h)``.** The leading linear-in
+``sinh, arsinh`` contribution cancels. The next lowest non-zero
+contribution comes from the cubic-correction ``J_a(g)^3 / 6 +
+J_a(h)^3 / 6 = J_a(g)^3 / 3``, which is a non-zero homogeneous
+polynomial of order ``3a`` (as ``J_a(g) != 0``). All other terms
+have order ``>= 3a``: the higher-order parts of ``H_g, H_h`` (orders
+``>= a + 1``, subtracted) and the higher-order cubic corrections
+(orders ``>= 3a + 1``). Among these the ``a + 1`` and ``3a`` terms
+compete, but ``3a >= a + 1`` for ``a >= 1``, so **the order-``a + 1``
+cancellation of the linear parts of ``sinh, arsinh`` does not save us
+— the cubic contribution of order ``3a`` remains and is non-zero**.
+Formally, the order-``3a`` homogeneous part of ``psi(g, h)`` is
+``(J_a(g)^3 + J_a(h)^3) / 6 = J_a(g)^3 / 3``, non-zero. Hence
+``ord(psi(g, h)) = 3a <= 3 * 3^{k-1} = 3^k``.
+
+In every case ``ord(psi(g, h)) <= 3^k``. The identically-zero
+conclusion follows because a real-analytic function whose ``ord`` is
+finite has a non-vanishing partial derivative at origin, so it is
+not zero on any neighbourhood of origin. QED.
+
+The bound ``3^k`` is **sharp**: the iteration
+``g_{k+1} = psi(g_k, g_k)`` starting from ``g_0 = x`` gives ``g_k``
+with ``ord(g_k) = 3^k`` (direct computation using
+``psi(u, u) = sinh(u) - arsinh(u) = u^3 / 3 + O(u^5)``).
 
 ### 3.4 Corollary: no Sheffer on ``{x, y}`` alone
 

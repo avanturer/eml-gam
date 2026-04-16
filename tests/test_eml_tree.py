@@ -206,6 +206,24 @@ def test_aees_enumerate_count_matches_formula():
         )
 
 
+def test_unbranched_aees_recovers_depth_5_target():
+    """Unbranched AEES must recover the nested-exp landscape target at d=5."""
+    from eml_gam.atlas_expansion import aees_search_unbranched
+    from eml_gam.benchmarks.landscape import _generate_data
+    x, y, _ = _generate_data(depth=5, seed=0)
+    top = aees_search_unbranched(x, y, depth=5, top_k=1)
+    assert top, "unbranched AEES returned no candidates"
+    assert top[0].r2 >= 0.999, top[0].r2
+
+
+def test_unbranched_enumeration_count():
+    """Unbranched enumeration must yield exactly 4^depth snaps."""
+    from eml_gam.atlas_expansion import enumerate_unbranched_snaps_univariate
+    for depth in (1, 2, 3, 4):
+        count = sum(1 for _ in enumerate_unbranched_snaps_univariate(depth))
+        assert count == 4 ** depth, (depth, count, 4 ** depth)
+
+
 def test_cross_operator_target_data_uses_correct_operator():
     """Symmetric cross-operator experiment must produce distinct targets
     depending on which operator generates them."""

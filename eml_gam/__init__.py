@@ -1,6 +1,12 @@
 """EML-GA²M: gradient-trained symbolic GAM with pairwise interactions."""
 
-from .atlas_expansion import AtlasCandidate, aees_recover, aees_search
+from .atlas_expansion import (
+    AtlasCandidate,
+    aees_recover,
+    aees_search,
+    aees_search_unbranched,
+    enumerate_unbranched_snaps_univariate,
+)
 from .eml_tree import EMLTree
 from .gam import EMLGAM
 from .interaction_select import select_pairs
@@ -37,6 +43,8 @@ __all__ = [
     "AtlasCandidate",
     "aees_search",
     "aees_recover",
+    "aees_search_unbranched",
+    "enumerate_unbranched_snaps_univariate",
     "format_formula",
     "complexity",
     "to_numpy_fn",

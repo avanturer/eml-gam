@@ -184,7 +184,113 @@ def aees_recover(
     return best.r2 >= r2_threshold, best
 
 
+def enumerate_unbranched_snaps_univariate(depth: int) -> Iterator[dict[int, torch.Tensor]]:
+    """Yield every "unbranched" snap configuration for a univariate tree.
+
+    A snap is unbranched when at every upper level the active node uses
+    exactly one ``f_child`` option — i.e. there is a single active path
+    from the root down to the bottom. Formally, the snap is parameterised
+    by:
+
+    * ``path[l] in {0, 1}`` for ``l in [0, depth - 2]`` — which slot
+      within the active node's pair at level ``l`` picks ``f_child``.
+    * ``non_active[l] in {0, 1}`` for ``l in [0, depth - 2]`` — the
+      content (``0`` = constant ``1``, ``1`` = ``x``) of the sibling of
+      the active slot at level ``l``.
+    * ``bot[0], bot[1] in {0, 1}`` — contents of the two slots in the
+      active pair at the bottom level.
+
+    All other slots are filled with ``0`` (constant ``1``) since they do
+    not appear on the active path and therefore do not affect the tree
+    output. The total count is
+
+        4^depth         (2^{d-1} paths x 2^{d-1} non-active x 4 bottom)
+
+    so enumeration is feasible through depth 10+. This is the scalable
+    analogue of :func:`aees_search` for targets that are representable
+    by a single nested function chain such as ``e - exp^{d - 2}(x)``
+    from the landscape benchmark.
+    """
+    assert depth >= 1
+    for path in product(range(2), repeat=max(depth - 1, 0)):
+        for non_active in product(range(2), repeat=max(depth - 1, 0)):
+            for bot in product(range(2), repeat=2):
+                snap: dict[int, torch.Tensor] = {
+                    l: torch.zeros(2 ** (l + 1), dtype=torch.long)
+                    for l in range(depth)
+                }
+                active_node = 0
+                for l in range(depth - 1):
+                    p_l = path[l]
+                    active_slot = 2 * active_node + p_l
+                    non_active_slot = 2 * active_node + (1 - p_l)
+                    snap[l][active_slot] = 2  # f_child
+                    snap[l][non_active_slot] = non_active[l]
+                    active_node = active_slot
+                bot_l = depth - 1
+                snap[bot_l][2 * active_node] = bot[0]
+                snap[bot_l][2 * active_node + 1] = bot[1]
+                yield snap
+
+
+def _count_unbranched_snaps(depth: int) -> int:
+    return 4 ** depth
+
+
+def aees_search_unbranched(
+    x: torch.Tensor,
+    y: torch.Tensor,
+    depth: int,
+    top_k: int = 10,
+    use_input_affine: bool = False,
+    verbose: bool = False,
+) -> list[AtlasCandidate]:
+    """Run AEES restricted to unbranched snaps (scales to large depth).
+
+    Uses :func:`enumerate_unbranched_snaps_univariate` as the enumeration
+    source. The function evaluation, OLS fitting and ranking are identical
+    to :func:`aees_search`. Total cost is ``O(4^depth * N)``.
+    """
+    if x.dim() == 1:
+        x = x.unsqueeze(1)
+    assert x.shape[1] == 1, "unbranched AEES is univariate"
+
+    y_np = y.detach().cpu().numpy().astype(np.float64)
+    y_mean = float(y_np.mean())
+    ss_tot = float(np.sum((y_np - y_mean) ** 2))
+    if ss_tot < 1e-20:
+        ss_tot = 1.0
+
+    scaffold = EMLTree(
+        depth=depth, n_inputs=1, use_input_affine=use_input_affine,
+    )
+    n_total = _count_unbranched_snaps(depth)
+    if verbose:
+        print(f"  unbranched AEES: enumerating {n_total:,} snaps")
+
+    results: list[AtlasCandidate] = []
+    for snap in enumerate_unbranched_snaps_univariate(depth):
+        scaffold.set_snap_config(snap)
+        with torch.no_grad():
+            pred = scaffold(x).detach().cpu().numpy().astype(np.float64)
+        if not np.all(np.isfinite(pred)) or np.std(pred) < 1e-12:
+            continue
+        m, v = pred.mean(), pred.var()
+        cov = np.mean((pred - m) * (y_np - y_mean))
+        beta = cov / max(v, 1e-30)
+        alpha = y_mean - beta * m
+        resid = y_np - (alpha + beta * pred)
+        r2 = 1.0 - float(np.sum(resid ** 2)) / ss_tot
+        results.append(
+            AtlasCandidate(snap=snap, r2=r2, alpha=alpha, beta=float(beta))
+        )
+    results.sort(key=lambda c: -c.r2)
+    return results[:top_k]
+
+
 __all__ = [
     "AtlasCandidate", "aees_search", "aees_recover",
     "enumerate_snaps",
+    "enumerate_unbranched_snaps_univariate",
+    "aees_search_unbranched",
 ]
