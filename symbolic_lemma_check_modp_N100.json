@@ -1,0 +1,18 @@
+{
+  "N": 100,
+  "P": 2147483647,
+  "n_trees_F0_le_4": 1806,
+  "n_distinct_taylor": 677,
+  "n_targets": 677,
+  "n_hits_modp": 1,
+  "elapsed_enum_s": 19.216193149997707,
+  "elapsed_targets_s": 8.793691566999769,
+  "hits_sample": [
+    {
+      "g_depth": 4,
+      "g_repr": "psi(psi(psi(psi(x,x),psi(x,x)),psi(psi(x,x),psi(x,x))),psi(psi(psi(x,x),psi(x,x)),psi(psi(x,x),psi(x,x))))",
+      "f_depth": 4,
+      "f_repr": "psi(psi(psi(psi(x,x),psi(x,x)),psi(psi(x,x),psi(x,x))),psi(psi(psi(x,x),psi(x,x)),psi(psi(x,x),psi(x,x))))"
+    }
+  ]
+}

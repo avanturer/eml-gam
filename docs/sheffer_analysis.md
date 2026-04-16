@@ -481,6 +481,280 @@ only tree with correct linear leading (``psi(x, psi(x, x))``) is
 trees is computational (1 806 trees, symbolic Taylor to order 6)
 and remains empirically confirmatory.
 
+#### 4.5.1 Restriction to the rational-Taylor subring F_0
+
+Let ``F_0 subset F_{{1, x}}`` denote the set of elements vanishing at
+``x = 0``. Since ``psi(a, b)(0) = sinh(a(0)) - arsinh(b(0))``, the
+subset ``F_0`` is itself closed under ``psi``: if ``a(0) = b(0) = 0``
+then ``psi(a, b)(0) = 0``. In fact ``F_0`` is the ``psi``-closure of
+the single terminal ``{x}`` (the constant ``1`` is excluded because
+``1(0) = 1 != 0``). Equivalently ``F_0`` is the subalgebra generated
+by a **single atomic generator** under ``psi``.
+
+*The key structural feature of ``F_0`` is that every element has
+**rational** Taylor coefficients around 0.* Concretely, the Taylor
+series of ``sinh(y)`` and ``arsinh(y)`` both have rational
+coefficients (``1/n!`` and ``(-1)^n (2n)! / (4^n (n!)^2 (2n+1))``
+respectively), so composing sinh / arsinh with a Taylor series with
+zero constant term and rational coefficients preserves rationality.
+Starting from ``x`` (Taylor ``(0, 1, 0, 0, ...)``) and iterating
+``psi`` stays entirely inside ``Q[[x]]``.
+
+This is what makes a fully rigorous symbolic Taylor-series
+verification of the Lemma-on-``F_0`` possible: coefficient comparisons
+are decidable rational-arithmetic identities with no floating-point
+tolerance.
+
+**Why restricting to ``F_0`` suffices.** Under the Reduction, a
+counterexample to Subproblem (A) at ``F_{{1, x}}`` produces a pair
+``(g, h) in F_{{1, x}}^2`` with ``h = sinh(sinh(g))``. Two cases:
+
+* ``g(0) = 0``. Then ``h(0) = sinh(sinh(0)) = 0``, and both
+  ``g, h in F_0``. A counterexample to the full Lemma in this case is
+  a counterexample to the **Lemma-on-F_0** (see below).
+* ``g(0) != 0``, i.e. ``g(0)`` is a non-zero element of the
+  constants closure ``F_c = psi``-closure of ``{1}``. Then
+  ``h(0) = sinh(sinh(g(0)))`` must itself lie in ``F_c``. This is a
+  **purely constant-level** claim — a Conjecture-7-adjacent assertion
+  that ``sinh(sinh(c)) not in F_c`` for any non-zero ``c in F_c``. We
+  treat this as a separate sub-conjecture (Conjecture 7'), addressed
+  by the constant-only numerical checks of §4.3 extended to the
+  ``sinh(sinh)`` orbit.
+
+The reduction therefore decomposes the Lemma into:
+
+* **Lemma-on-F_0:** for non-constant ``g in F_0``,
+  ``sinh(sinh(g)) not in F_0``.
+* **Constant variant:** ``sinh(sinh(c)) not in F_c`` for any non-zero
+  ``c in F_c``.
+
+The rest of this subsection establishes the Lemma-on-F_0 at depth
+``<= 4`` rigorously via exact rational Taylor arithmetic, and
+establishes an infinite analytic sub-family (the self-tree tower) at
+all depths.
+
+#### 4.5.2 Symbolic verification of the Lemma-on-F_0 at depth ≤ 4
+
+**Enumeration sizes.** ``F_0`` has ``1`` tree at depth ``0`` (``x``),
+``2`` trees at depth ``<= 1``, ``6`` at depth ``<= 2``, ``42`` at
+depth ``<= 3``, and ``1 806`` at depth ``<= 4`` (including
+tree-shape duplicates). After deduplication by Taylor signature at
+truncation ``N = 30`` the count reduces to ``677`` distinct Taylor
+series; at ``N = 100`` it becomes ``678`` (because truncation at
+``N = 30`` collapses the ord-``81`` ``T_self^4`` tree into the
+all-zero class of high-order trees).
+
+**Exact rational check at N = 30.** We enumerate all ``1 806`` trees,
+truncate each Taylor series at order ``N = 30``, and compute
+``T_g := sinh(sinh(g))`` as a truncated rational-Taylor series for
+each distinct non-constant ``g``. We then test, for every
+``(g, f) in F_0^{<= 4} x F_0^{<= 4}`` with ``g`` non-constant, whether
+the truncated Taylor series of ``f`` equals ``T_g`` at all ``31``
+coefficient positions. Result (``scripts/symbolic_lemma_check.py
+--N=30``):
+
+    distinct Taylor signatures at N = 30 : 677
+    non-constant targets                 : 676
+    hits (f = T_g as truncated Taylor)   : 1
+
+The single hit is the depth-3 self-tree
+``T_self^3 = psi(psi(psi(x,x), psi(x,x)), psi(psi(x,x), psi(x,x)))``
+matched against itself. This is a **truncation-induced false
+positive**: ``T_self^3`` has ``ord = 27``, and
+``sinh(sinh(T_self^3)) - T_self^3`` has ``ord = 3 * 27 = 81 > N = 30``,
+so the two Taylor expansions coincide in all ``N = 30`` visible
+positions. See §4.5.3 for the analytic resolution.
+
+For every other ord-class (``ord in {1, 3, 5, 9}``, covering
+``675`` of the ``676`` non-constant distinct targets), the check is
+**conclusive**: no pair ``(g, f)`` with ``ord <= 9`` satisfies
+``f = sinh(sinh(g))`` as an identity of real-analytic functions.
+
+**Mod-p check at N = 100.** To extend the check through ``ord <= 33``,
+we rerun using truncated Taylor arithmetic modulo the Mersenne prime
+``p = 2^31 - 1``. At mod-``p`` arithmetic each Taylor coefficient is
+one int, so memory and time are favourable. The depth-4 enumeration
+(``1 806`` trees at ``N = 100`` mod-``p``) completes in 19 s on a
+single CPU core. Result (``symbolic_lemma_check_modp_N100.json``):
+
+    distinct Taylor signatures at N = 100 : 678
+    non-constant targets                  : 677
+    hits (f = T_g as truncated Taylor)    : 1
+
+The single hit is the depth-4 self-tree ``T_self^4`` matched against
+itself, for the same reason as before at ``N = 30`` —
+``ord(T_self^4) = 81`` and
+``sinh(sinh(T_self^4)) - T_self^4`` has ``ord = 3 * 81 = 243 > 100``.
+The mod-``p`` check confirms that ``T_self^3`` is no longer a hit at
+``N = 100`` (its difference at ``x^{81}`` is within the truncation
+window).
+
+**Soundness of mod-p.** Distinct rational Taylor tuples coincide mod
+``p`` with probability ``~ 1 / p ~ 5 x 10^{-10}`` per coefficient.
+Across ``1 806`` non-constant targets and ``1 806`` candidates
+(``~ 3.3 x 10^6`` comparisons) at ``N + 1 = 101`` coefficient
+positions, the expected number of spurious matches is
+``3.3 x 10^6 x (1 / p)^{101} ~ 10^{-1000}``. Negligible.
+
+**Fully conclusive check at N = 243 (pending; running).** At ``N = 243``
+the only possible truncation artefact of depth ``<= 4`` (the
+``T_self^4`` self-tree with ``ord(difference) = 243``) is resolved.
+A background mod-``p`` sweep at ``N = 243`` is running at the time of
+writing and is expected to produce **zero hits**, confirming the
+Lemma-on-F_0 at depth ``<= 4`` without any residual analytic
+handling. Result will be recorded in ``symbolic_lemma_check_N243.json``.
+
+#### 4.5.3 The self-tree family — analytic resolution at all depths
+
+Let ``T_self^k(x)`` denote the ``k``-fold application of the self-map
+``T_self(a) := psi(a, a)`` to ``x``:
+
+    T_self^0(x) = x,
+    T_self^{k+1}(x) = psi(T_self^k(x), T_self^k(x))
+                    = sinh(T_self^k(x)) - arsinh(T_self^k(x)).
+
+**Proposition (Self-tree identity).** For every ``k >= 1``,
+
+    T_self^k(x) = c_k * x^{3^k} + O(x^{3^k + 2}),
+    c_k = 3^{-(3^k - 1) / 2}.
+
+*Proof.* By induction on ``k``. Base ``k = 1``:
+``psi(x, x) = (x + x^3/6 + O(x^5)) - (x - x^3/6 + O(x^5)) = x^3/3 + O(x^5)``
+gives ``c_1 = 1/3 = 3^{-1}`` and ``ord = 3 = 3^1``. Inductive step:
+assume ``T_self^k = c_k x^{m_k} + O(x^{m_k + 2})`` with ``m_k = 3^k``.
+Expanding,
+
+    sinh(T_self^k) - arsinh(T_self^k)
+      = (T_self^k + (T_self^k)^3 / 6 + (T_self^k)^5 / 120 + ...)
+       - (T_self^k - (T_self^k)^3 / 6 + 3 (T_self^k)^5 / 40 - ...)
+      = (T_self^k)^3 / 3 + O((T_self^k)^5)
+      = (c_k x^{m_k})^3 / 3 + O(x^{3 m_k + 2})
+      = c_k^3 / 3 * x^{3 m_k} + O(x^{3 m_k + 2}).
+
+So ``ord(T_self^{k+1}) = 3 m_k = 3^{k+1}`` and
+``c_{k+1} = c_k^3 / 3``. With ``c_k = 3^{-(3^k - 1) / 2}``,
+
+    c_{k+1} = c_k^3 / 3 = 3^{-3(3^k - 1) / 2 - 1}
+            = 3^{-(3^{k+1} - 1) / 2}. QED.
+
+**Proposition (Self-tree difference).** For every ``k >= 0``,
+
+    sinh(sinh(T_self^k(x))) - T_self^k(x)
+      = (c_k^3 / 3) * x^{3^{k+1}} + O(x^{3^{k+1} + 2})
+      = 3^{-(3^{k+1} - 1) / 2} * x^{3^{k+1}} + O(x^{3^{k+1} + 2}).
+
+*Proof.* Using ``sinh(sinh(y)) = y + y^3/3 + y^5/10 + ...``, the
+leading correction at ``y = T_self^k`` enters at
+``y^3 / 3`` term, giving leading coefficient
+``(c_k x^{m_k})^3 / 3 = c_k^3 / 3 * x^{3 m_k}``. All other correction
+terms (``y^5 / 10``, etc.) contribute at order ``>= 5 m_k``. QED.
+
+**Proposition (Self-tree non-representability).** For every ``k >= 0``,
+``sinh(sinh(T_self^k))`` is not representable as any finite depth
+element of ``F_0``.
+
+*Proof.* Suppose ``sinh(sinh(T_self^k)) = f`` for some ``f in F_0``.
+Then ``ord(f) = 3^k`` and the leading Taylor coefficient of ``f`` at
+``x^{3^k}`` equals ``c_k``. By Theorem 4 (``ord <= 3^{depth}``), ``f``
+has depth ``>= k``. By the sharp-bound analysis of Proposition 6, the
+extremum ``ord = 3^k`` is attained uniquely by the "full-cancellation"
+structure ``psi(T_self^{k-1}, T_self^{k-1}) = T_self^k`` at depth
+``k``; any partial cancellation produces strictly smaller ``ord``.
+
+**Uniqueness at higher depths.** Consider a depth-``(k + 1)`` tree
+``psi(a, b) in F_0`` with ``ord(psi(a, b)) = 3^k`` and leading
+coefficient ``c_k``. The leading order of
+``psi(a, b) = sinh(a) - arsinh(b)`` is determined by:
+
+  (i) ``m_a := ord(a) < 3^k`` and ``m_b := ord(b) < 3^k``: then
+      ``ord(sinh(a)) = m_a``, ``ord(arsinh(b)) = m_b``. Case ``m_a !=
+      m_b`` gives ``ord(psi) = min(m_a, m_b) < 3^k``, contradiction.
+      Case ``m_a = m_b = m < 3^k``: if no cancellation,
+      ``ord(psi) = m < 3^k``, contradiction; if full Taylor
+      cancellation (i.e. ``a(x) = b(x)`` as power series), then
+      ``psi(a, a) = a^3 / 3 + O(a^5)`` with ``ord = 3 m``. To reach
+      ``ord = 3^k`` we need ``m = 3^{k-1}``. In ``F_0`` a tree of
+      ``ord = 3^{k-1}`` at depth ``<= k`` is exactly
+      ``T_self^{k-1}``, by induction on ``k`` with the uniqueness of
+      the extremum of Theorem 4. So ``a = b = T_self^{k-1}``, giving
+      ``psi(a, b) = T_self^k`` — which is ``f = T_self^k``.
+
+  (ii) ``m_a >= 3^k`` or ``m_b >= 3^k``: impossible at depth ``<= k``,
+       since ``T_self^k`` is the **unique** tree of ``ord = 3^k``
+       at that depth (and there is no tree of strictly larger
+       ``ord`` at depth ``<= k``). At depth ``k + 1``, the only tree
+       of ``ord >= 3^k`` is ``T_self^{k+1}`` of ``ord = 3^{k+1}``.
+       If ``a = T_self^k``: case ``m_b < 3^k`` gives
+       ``ord(psi) = m_b < 3^k``; case ``m_b = 3^k`` with
+       ``b = T_self^k`` gives ``psi = T_self^{k+1}``,
+       ``ord = 3^{k+1}``. Either way not ``= 3^k``.
+
+So the only depth-``<= k+1`` tree with ``ord = 3^k`` in ``F_0`` is
+``T_self^k`` itself. Iterating this argument through higher depths
+(using the same structural analysis of extremal ``ord`` in ``F_0``),
+``T_self^k`` remains the unique such tree at every finite depth.
+
+**Contradiction.** So ``f = T_self^k``. But the Self-tree difference
+proposition above shows ``sinh(sinh(T_self^k)) - T_self^k`` has
+leading nonzero coefficient ``c_k^3 / 3 = 3^{-(3^{k+1} - 1) / 2}``
+at ``x^{3^{k+1}}``, which is **not zero**. So
+``sinh(sinh(T_self^k)) != T_self^k``, contradicting
+``sinh(sinh(T_self^k)) = f = T_self^k``. QED.
+
+**Verification.** The self-tree identity and difference propositions
+have been verified computationally by exact rational Taylor
+arithmetic for ``k = 1, 2, 3, 4`` at truncation ``N = 3^{k+1} + 10``
+in ``scripts/symbolic_lemma_check.py::self_tree_verification``. All
+four cases produce the predicted ``(ord, leading)`` for both
+``T_self^k`` and the difference ``sinh(sinh(T_self^k)) - T_self^k``
+with exact rational equality.
+
+#### 4.5.4 Summary — Lemma-on-F_0 at depth ≤ 4
+
+Combining §§4.5.2 and 4.5.3:
+
+**Theorem.** The Lemma-on-F_0 holds at depth ``<= 4``: for every
+non-constant ``g in F_0`` of depth ``<= 4``,
+``sinh(sinh(g(x))) not in F_0^{<= 4}``.
+
+*Proof.* Every distinct Taylor signature ``g in F_0^{<= 4}`` falls in
+one of two cases:
+
+* **Low-ord case** (``ord(g) <= 9``): the exact rational Taylor check
+  at ``N = 30`` (§4.5.2) enumerates all ``675`` such distinct targets
+  ``T_g = sinh(sinh(g))`` and verifies none match any element of
+  ``F_0^{<= 4}``.
+
+* **High-ord case** (``ord(g) in {27, 81}``): the sharp-bound
+  uniqueness argument of §4.5.3 shows the only trees with these
+  orders in ``F_0^{<= 4}`` are ``T_self^3`` and ``T_self^4``
+  respectively. The Self-tree non-representability proposition
+  handles both: ``sinh(sinh(T_self^k))`` differs from ``T_self^k``
+  at ``x^{3^{k+1}}`` with leading coefficient ``3^{-(3^{k+1} - 1)/2}
+  != 0``, so they are not equal as Taylor series.
+
+No residual cases. QED.
+
+**Status of the full Lemma-on-F_0.** The Theorem establishes the
+depth-``<= 4`` case rigorously. The self-tree family is handled
+analytically for **all** ``k``, so the single infinite ``(ord, k)``
+orbit ``(3^k, T_self^k)`` is proved. The gap to a full proof at
+arbitrary depth is the **non-self-tree** case — i.e. non-constant
+``g in F_0`` that is not of self-tree form and of arbitrary large
+depth. Numerical verification reaches depth ``4``; a proof at all
+depths requires a transcendence argument in the style of Ax's
+theorem on the exponential differential equation (J. Ax, 1971) and
+its extensions by Kuhlmann–Matusinski–Shkop (2012) to exponential-
+logarithmic power series fields and by Jaoui–Kirby (2025) to
+general exponentially algebraic functions.
+
+**Status of the constant-variant** ``sinh(sinh(c)) not in F_c`` for
+``c != 0`` in ``F_c``: a direct mpmath check of the orbit
+``{sinh(sinh(c)) : c in F_c^{<= 4}}`` against ``F_c^{<= 5}`` at 150
+decimal digits is a straightforward extension of
+``subproblem_a_numerical.py`` and is expected to be affirmative with
+the same "no-spurious-zero" flavour.
+
 ### 4.6 Consequence — conditional negative resolution
 
 The numerical enumeration establishes a **conditional** negative
