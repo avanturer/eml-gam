@@ -755,6 +755,42 @@ by Kuhlmann–Matusinski–Shkop (2012) to exponential-logarithmic
 power series fields, or the exponentially-algebraic framework of
 Jaoui–Kirby (2025).
 
+**A natural "uniqueness induction" approach does NOT close the
+Lemma.** One might try to prove the Lemma inductively by claiming
+that ``T_self^k`` is the unique element of ``F_0`` with
+``(ord, leading) = (3^k, c_k)`` at every depth. Under this claim,
+``sinh(sinh(T_self^k))`` — which has ``(ord, leading) = (3^k, c_k)``
+but differs from ``T_self^k`` at ``x^{3^{k+1}}`` — would have no
+matching element in ``F_0``, completing the Lemma.
+
+However, this uniqueness claim is **false** in ``F_0`` at sufficient
+depth (``scripts/uniqueness_analysis.py``):
+
+* At depth ``<= 4``, ``(ord=9, lead=1/81)`` has 4 distinct Taylor
+  signatures, including ``T_self^2`` and three depth-4 siblings.
+  For the specific depth-4 sibling
+  ``g_1 = psi(T_self^2, psi(T_self^2, T_self^2))``, ``g_1`` agrees
+  with ``T_self^2`` as Taylor series through ``x^{25}`` and differs
+  first at ``x^{27}``.
+
+* Consequently at depth ``<= 5``, ``psi(g_1, g_1) in F_0^{<= 5}``
+  has ``(ord, leading) = (27, 1/3^{13}) = (3^3, c_3)`` — matching
+  ``T_self^3`` — but DIFFERENT Taylor series from ``T_self^3``
+  (agrees through ``x^{43}``, differs first at ``x^{45}``).
+
+So ``(ord=3^3, lead=c_3)`` contains at least two distinct Taylor
+signatures at depth ``<= 5``: ``T_self^3`` itself, and this
+``psi(g_1, g_1)``. The uniqueness induction step fails.
+
+The Lemma-on-F_0 is STILL TRUE at depth ``<= 4`` (rigorous) and
+empirically plausible at higher depth — the multiple
+``(ord=3^k, lead=c_k)`` trees have DIFFERENT higher-order
+coefficients and so don't match ``sinh(sinh(g))`` for their specific
+``g``. But the proof mechanism cannot be a naive uniqueness
+argument; it must pick out a finer structural invariant or use
+transcendence theory. This rules out a session-level inductive
+closure and confirms the open status of the general Lemma.
+
 #### 4.5.5 The constant-variant check
 
 The Reduction splits Subproblem (A) into Lemma-on-F_0 plus the
