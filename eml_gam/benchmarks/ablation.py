@@ -1,14 +1,14 @@
 """Ablation study for the warm-start, affine, scale-normalisation and
 hold-out validation components of EMLGAM.
 
-Each variant builds on the previous one:
+Each variant adds one capability on top of the previous one:
 
-  V0 baseline   : random initialisation, no input affine, no hold-out.
-  V1 +warm_start: atlas-based warm-start from the primitive library.
-  V2 +affine    : learnable per-tree input scale and offset.
-  V3 +scale_nrm : conditional feature-scale normalisation.
-  V5 full       : V3 plus two-sided hold-out and adaptive simplicity
-                  tolerance (the full EMLGAM defaults).
+  V0 baseline     : random init, no affine, no normalization.
+  V1 +warm_start  : atlas-based warm-start (in-sample OLS, no holdout).
+  V2 +affine      : learnable per-tree input scale and offset.
+  V3 +scale_norm  : conditional feature-scale normalisation.
+  V4 +holdout     : two-sided holdout validation with adaptive simplicity
+                    tolerance (the full EMLGAM defaults).
 
 Extrapolation R² is measured on six representative datasets.
 """
@@ -47,6 +47,8 @@ def _run(
     ds,
     *,
     warm_start: bool,
+    use_input_affine: bool,
+    use_holdout: bool,
     scale_normalize: bool,
     standardize: bool,
     univariate_depth: int = 2,
@@ -64,12 +66,15 @@ def _run(
         bivariate_depth=bivariate_depth,
         feature_names=ds.feature_names,
         interaction_pairs=interaction_pairs,
+        use_input_affine=use_input_affine,
         standardize=standardize,
         scale_normalize=scale_normalize,
     )
     cfg = TrainConfig(n_epochs=n_epochs, lr=5e-2, entropy_weight=1e-3)
     model.fit(
-        ds.X_train, ds.y_train, cfg=cfg, warm_start=warm_start, verbose=False
+        ds.X_train, ds.y_train, cfg=cfg,
+        warm_start=warm_start, use_holdout=use_holdout,
+        verbose=False,
     )
     y_in = model.predict(ds.X_test_interp)
     y_ex = model.predict(ds.X_test_extrap)
@@ -89,11 +94,26 @@ def run_ablation(verbose: bool = True) -> list[AblationResult]:
         arrhenius(n_train=512),
     ]
     variants = [
-        ("V0_baseline",    dict(warm_start=False, scale_normalize=False, standardize=False)),
-        ("V1_warm",        dict(warm_start=True,  scale_normalize=False, standardize=False)),
-        ("V2_+affine",     dict(warm_start=True,  scale_normalize=False, standardize=False)),
-        ("V3_+scale_norm", dict(warm_start=True,  scale_normalize=True,  standardize=True)),
-        ("V5_full",        dict(warm_start=True,  scale_normalize=True,  standardize=True)),
+        ("V0_baseline", dict(
+            warm_start=False, use_input_affine=False,
+            use_holdout=False, scale_normalize=False, standardize=False,
+        )),
+        ("V1_+warm", dict(
+            warm_start=True, use_input_affine=False,
+            use_holdout=False, scale_normalize=False, standardize=False,
+        )),
+        ("V2_+affine", dict(
+            warm_start=True, use_input_affine=True,
+            use_holdout=False, scale_normalize=False, standardize=False,
+        )),
+        ("V3_+scale_norm", dict(
+            warm_start=True, use_input_affine=True,
+            use_holdout=False, scale_normalize=True, standardize=True,
+        )),
+        ("V4_+holdout", dict(
+            warm_start=True, use_input_affine=True,
+            use_holdout=True, scale_normalize=True, standardize=True,
+        )),
     ]
 
     results: list[AblationResult] = []
@@ -106,7 +126,7 @@ def run_ablation(verbose: bool = True) -> list[AblationResult]:
                 r2_in, r2_ex = _run(ds, **vcfg)
             except Exception as e:
                 if verbose:
-                    print(f"  {vname:14s} FAILED: {e}")
+                    print(f"  {vname:16s} FAILED: {e}")
                 continue
             results.append(
                 AblationResult(
@@ -118,7 +138,7 @@ def run_ablation(verbose: bool = True) -> list[AblationResult]:
             )
             if verbose:
                 print(
-                    f"  {vname:14s}  R2_in={r2_in:+7.3f}  R2_ex={r2_ex:+7.3f}"
+                    f"  {vname:16s}  R2_in={r2_in:+7.3f}  R2_ex={r2_ex:+7.3f}"
                     f"  time={time.perf_counter() - t0:5.1f}s"
                 )
     return results
@@ -126,14 +146,14 @@ def run_ablation(verbose: bool = True) -> list[AblationResult]:
 
 if __name__ == "__main__":
     results = run_ablation()
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 72)
     print(
-        f"{'dataset':25s} {'variant':15s} "
+        f"{'dataset':25s} {'variant':17s} "
         f"{'R2 interp':>10s} {'R2 extrap':>10s}"
     )
-    print("-" * 70)
+    print("-" * 72)
     for r in results:
         print(
-            f"{r.dataset:25s} {r.variant:15s} "
+            f"{r.dataset:25s} {r.variant:17s} "
             f"{r.r2_interp:+10.3f} {r.r2_extrap:+10.3f}"
         )

@@ -74,14 +74,21 @@ Two more real-world datasets are included (Concrete Compressive Strength and Air
 
 ### Ablation
 
-Each component matters — see `benchmarks/ablation.py`:
-- Warm-start from primitive atlas: biggest single contributor (fixes convergence from ~25% to ~100%)
-- Scale normalisation: needed for features with extreme magnitudes (Arrhenius 1/T ~ 0.002)
-- Two-sided holdout + adaptive simplicity tolerance: fine-tunes symbolic form selection
+Five genuinely distinct variants (`benchmarks/ablation.py`):
+
+| Variant | What it adds |
+|---------|-------------|
+| V0 baseline | random init, no affine, no normalization |
+| V1 +warm | atlas-based warm-start (in-sample scoring) |
+| V2 +affine | learnable per-tree input scale and offset |
+| V3 +scale_norm | conditional feature normalization |
+| V4 +holdout | two-sided holdout validation + adaptive simplicity tolerance |
+
+Warm-start is the biggest contributor. Affine lets the model absorb multiplicative constants. Scale normalization is needed for features with extreme magnitudes (Arrhenius 1/T ~ 0.002). Holdout fine-tunes the symbolic form by scoring on distribution tails.
 
 ### Error bars
 
-All results can be re-run with multiple seeds via `benchmarks/multiseed.py` to get mean +/- std. This shows robustness to random initialisation and noise draws.
+All results can be re-run with multiple seeds via `benchmarks/multiseed.py`. This shows robustness to random initialisation and noise draws.
 
 ## Installation
 
@@ -175,7 +182,7 @@ python -m eml_gam.benchmarks.extrapolation
 python -m eml_gam.benchmarks.ablation
 python -m eml_gam.benchmarks.scalability
 python -m eml_gam.benchmarks.real_world
-python -m eml_gam.benchmarks.multiseed   # multi-seed with error bars
+python -m eml_gam.benchmarks.multiseed   # multi-seed with error bars (slow)
 
 # save everything to results.json
 python -m scripts.save_results

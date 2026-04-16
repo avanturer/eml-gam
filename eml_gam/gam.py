@@ -80,6 +80,7 @@ class EMLGAM(nn.Module):
         univariate_depth: int = 2,
         bivariate_depth: int = 2,
         use_univariate: bool = True,
+        use_input_affine: bool = True,
         feature_names: Optional[List[str]] = None,
         standardize: bool = True,
         scale_normalize: bool = True,
@@ -89,6 +90,7 @@ class EMLGAM(nn.Module):
         self.univariate_depth = univariate_depth
         self.bivariate_depth = bivariate_depth
         self.use_univariate = use_univariate
+        self.use_input_affine = use_input_affine
         self.standardize = standardize
         self.scale_normalize = scale_normalize
         self.feature_names = feature_names or [
@@ -101,7 +103,11 @@ class EMLGAM(nn.Module):
         if use_univariate:
             self.univariate_trees = nn.ModuleList(
                 [
-                    EMLTree(depth=univariate_depth, n_inputs=1)
+                    EMLTree(
+                        depth=univariate_depth,
+                        n_inputs=1,
+                        use_input_affine=use_input_affine,
+                    )
                     for _ in range(n_features)
                 ]
             )
@@ -135,7 +141,9 @@ class EMLGAM(nn.Module):
         if key in self.bivariate_trees:
             return
         self.bivariate_trees[key] = EMLTree(
-            depth=self.bivariate_depth, n_inputs=2
+            depth=self.bivariate_depth,
+            n_inputs=2,
+            use_input_affine=self.use_input_affine,
         )
         self._pair_order.append((i, j))
         self.bivariate_weights.append(nn.Parameter(torch.ones((), dtype=DTYPE)))
@@ -197,6 +205,7 @@ class EMLGAM(nn.Module):
         interaction_pairs: Optional[Iterable[PairKey]] = None,
         verbose: bool = False,
         warm_start: bool = True,
+        use_holdout: bool = True,
         atlas_univariate: Optional[list] = None,
         atlas_bivariate: Optional[list] = None,
     ) -> "EMLGAM":
@@ -233,7 +242,8 @@ class EMLGAM(nn.Module):
 
         if warm_start:
             self._warm_start_trees(
-                x, y_work, atlas_univariate, atlas_bivariate, verbose=verbose
+                x, y_work, atlas_univariate, atlas_bivariate,
+                verbose=verbose, use_holdout=use_holdout,
             )
 
         optim = torch.optim.Adam(self.parameters(), lr=cfg.lr)
@@ -307,6 +317,7 @@ class EMLGAM(nn.Module):
         atlas_univariate,
         atlas_bivariate,
         verbose: bool = False,
+        use_holdout: bool = True,
     ) -> None:
         """Install warm-start snap configurations by fitting a primitive per
         component against the current residual."""
@@ -324,7 +335,8 @@ class EMLGAM(nn.Module):
             residual = residual - self.bias.detach()
             for i, tree in enumerate(self.univariate_trees):
                 best = warm_start_tree(
-                    tree, atlas_uni, x_z[:, i : i + 1], residual
+                    tree, atlas_uni, x_z[:, i : i + 1], residual,
+                    use_holdout=use_holdout,
                 )
                 with torch.no_grad():
                     values = tree(x_z[:, i : i + 1])
@@ -354,7 +366,8 @@ class EMLGAM(nn.Module):
             ):
                 tree = self.bivariate_trees[key]
                 best = warm_start_tree(
-                    tree, atlas_bi, x_z[:, [i, j]], residual
+                    tree, atlas_bi, x_z[:, [i, j]], residual,
+                    use_holdout=use_holdout,
                 )
                 with torch.no_grad():
                     values = tree(x_z[:, [i, j]])
@@ -379,11 +392,32 @@ class EMLGAM(nn.Module):
             self.bias.add_(residual.mean())
 
     @torch.no_grad()
-    def predict(self, X) -> np.ndarray:
+    def predict(self, X, clip_factor: float = 0.0) -> np.ndarray:
+        """Predict on new data.
+
+        Parameters
+        ----------
+        clip_factor : float
+            If positive, clip predictions to
+            ``[y_min - factor * range, y_max + factor * range]``
+            where min/max/range are computed from the training target.
+            This prevents extrapolation explosions (e.g. exp(0.06 * age)
+            on Concrete). Set to 0 (default) to disable.
+        """
         x = to_tensor(X)
         if x.dim() == 1:
             x = x.unsqueeze(1)
-        return self(x, destandardize_y=True).cpu().numpy()
+        out = self(x, destandardize_y=True).cpu().numpy()
+        if clip_factor > 0.0 and self._fitted:
+            y_lo = float(self.y_mean - 3.0 * self.y_std)
+            y_hi = float(self.y_mean + 3.0 * self.y_std)
+            y_range = y_hi - y_lo
+            out = np.clip(
+                out,
+                y_lo - clip_factor * y_range,
+                y_hi + clip_factor * y_range,
+            )
+        return out
 
     def get_formulas(self, simplify: bool = True) -> dict:
         """Return a dictionary mapping component names to SymPy expressions.

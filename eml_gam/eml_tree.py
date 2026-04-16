@@ -45,9 +45,18 @@ class EMLTree(nn.Module):
         interaction component.
     temperature : float
         Initial softmax temperature. Annealed toward zero during training.
+    use_input_affine : bool
+        If ``True`` (default), each input gets a learnable ``scale * x +
+        offset`` transform. Set to ``False`` for ablation experiments.
     """
 
-    def __init__(self, depth: int = 2, n_inputs: int = 2, temperature: float = 1.0):
+    def __init__(
+        self,
+        depth: int = 2,
+        n_inputs: int = 2,
+        temperature: float = 1.0,
+        use_input_affine: bool = True,
+    ):
         super().__init__()
         assert depth >= 1, "depth must be >= 1"
         assert n_inputs in (1, 2), "n_inputs must be 1 (univariate) or 2 (bivariate)"
@@ -55,6 +64,7 @@ class EMLTree(nn.Module):
         self.depth = depth
         self.n_inputs = n_inputs
         self._temperature = float(temperature)
+        self.use_input_affine = use_input_affine
 
         self.n_bottom_options = 1 + n_inputs
         self.n_upper_options = 2 + n_inputs
@@ -77,8 +87,16 @@ class EMLTree(nn.Module):
                 persistent=False,
             )
 
-        self.input_scale = nn.Parameter(torch.ones(n_inputs, dtype=DTYPE))
-        self.input_offset = nn.Parameter(torch.zeros(n_inputs, dtype=DTYPE))
+        if use_input_affine:
+            self.input_scale = nn.Parameter(torch.ones(n_inputs, dtype=DTYPE))
+            self.input_offset = nn.Parameter(torch.zeros(n_inputs, dtype=DTYPE))
+        else:
+            self.register_buffer(
+                "input_scale", torch.ones(n_inputs, dtype=DTYPE)
+            )
+            self.register_buffer(
+                "input_offset", torch.zeros(n_inputs, dtype=DTYPE)
+            )
 
     @property
     def temperature(self) -> float:
@@ -215,8 +233,9 @@ class EMLTree(nn.Module):
         with torch.no_grad():
             for logits in self.level_logits:
                 logits.uniform_(-0.1, 0.1)
-            self.input_scale.data.fill_(1.0)
-            self.input_offset.data.zero_()
+            if self.use_input_affine:
+                self.input_scale.data.fill_(1.0)
+                self.input_offset.data.zero_()
         self._is_snapped = False
 
     def get_symbolic_expression(
@@ -290,5 +309,5 @@ class EMLTree(nn.Module):
         return (
             f"depth={self.depth}, n_inputs={self.n_inputs}, "
             f"n_params={self.n_params}, temperature={self._temperature:.3f}, "
-            f"snapped={self._is_snapped}"
+            f"snapped={self._is_snapped}, affine={self.use_input_affine}"
         )

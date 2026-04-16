@@ -205,6 +205,7 @@ def score_primitive(
     y: torch.Tensor,
     outlier_ratio_max: float = 8.0,
     holdout_quantile: float = 0.8,
+    use_holdout: bool = True,
 ) -> tuple[float, float, float]:
     """OLS fit ``y ~ alpha + beta * primitive(x)`` with two validation guards.
 
@@ -239,31 +240,40 @@ def score_primitive(
     if dyn_range / denom < 0.05:
         return -np.inf, 0.0, 0.0
 
-    if x.dim() == 1:
-        feat = x.detach().cpu().numpy()
+    if use_holdout:
+        if x.dim() == 1:
+            feat = x.detach().cpu().numpy()
+        else:
+            feat = x[:, 0].detach().cpu().numpy()
+        order = np.argsort(feat)
+        n = len(values)
+        edge_frac = (1.0 - holdout_quantile) / 2.0
+        n_edge = max(int(edge_frac * n), 4)
+        if 2 * n_edge >= n - 8:
+            n_edge = max((n - 8) // 2, 2)
+        val_idx = np.concatenate([order[:n_edge], order[-n_edge:]])
+        train_idx = order[n_edge : n - n_edge]
+
+        v_train, y_train = values[train_idx], y_np[train_idx]
+        v_val, y_val = values[val_idx], y_np[val_idx]
+        if np.std(v_train) < 1e-12 or np.std(y_val) < 1e-12:
+            return -np.inf, 0.0, 0.0
+
+        design_train = np.stack([np.ones_like(v_train), v_train], axis=1)
+        coef, *_ = np.linalg.lstsq(design_train, y_train, rcond=None)
+
+        y_hat_val = coef[0] + coef[1] * v_val
+        ss_res = float(np.sum((y_val - y_hat_val) ** 2))
+        ss_tot = float(np.sum((y_val - y_val.mean()) ** 2))
+        r2_val = 1.0 - ss_res / max(ss_tot, 1e-12)
     else:
-        feat = x[:, 0].detach().cpu().numpy()
-    order = np.argsort(feat)
-    n = len(values)
-    edge_frac = (1.0 - holdout_quantile) / 2.0
-    n_edge = max(int(edge_frac * n), 4)
-    if 2 * n_edge >= n - 8:
-        n_edge = max((n - 8) // 2, 2)
-    val_idx = np.concatenate([order[:n_edge], order[-n_edge:]])
-    train_idx = order[n_edge : n - n_edge]
-
-    v_train, y_train = values[train_idx], y_np[train_idx]
-    v_val, y_val = values[val_idx], y_np[val_idx]
-    if np.std(v_train) < 1e-12 or np.std(y_val) < 1e-12:
-        return -np.inf, 0.0, 0.0
-
-    design_train = np.stack([np.ones_like(v_train), v_train], axis=1)
-    coef, *_ = np.linalg.lstsq(design_train, y_train, rcond=None)
-
-    y_hat_val = coef[0] + coef[1] * v_val
-    ss_res = float(np.sum((y_val - y_hat_val) ** 2))
-    ss_tot = float(np.sum((y_val - y_val.mean()) ** 2))
-    r2_val = 1.0 - ss_res / max(ss_tot, 1e-12)
+        # In-sample R² (no holdout)
+        design = np.stack([np.ones_like(values), values], axis=1)
+        coef, *_ = np.linalg.lstsq(design, y_np, rcond=None)
+        y_hat = coef[0] + coef[1] * values
+        ss_res = float(np.sum((y_np - y_hat) ** 2))
+        ss_tot = float(np.sum((y_np - y_np.mean()) ** 2))
+        r2_val = 1.0 - ss_res / max(ss_tot, 1e-12)
 
     design_full = np.stack([np.ones_like(values), values], axis=1)
     coef_full, *_ = np.linalg.lstsq(design_full, y_np, rcond=None)
@@ -296,6 +306,7 @@ def warm_start_tree(
     y: torch.Tensor,
     try_signs: bool = True,
     simplicity_tol: float = 0.10,
+    use_holdout: bool = True,
 ) -> PrimitiveConfig:
     """Install the best atlas entry into the given tree.
 
@@ -325,7 +336,7 @@ def warm_start_tree(
         sign_t = torch.tensor(signs, dtype=x.dtype, device=x.device)
         x_scaled = x * sign_t
         for idx, cfg in enumerate(candidates):
-            r2, _, _ = score_primitive(cfg, x_scaled, y)
+            r2, _, _ = score_primitive(cfg, x_scaled, y, use_holdout=use_holdout)
             all_ranked.append((r2, idx, signs, cfg))
 
     best_r2 = max(c[0] for c in all_ranked)
