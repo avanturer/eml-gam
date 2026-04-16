@@ -1,0 +1,58 @@
+[
+  {
+    "operator": "eml",
+    "depth": 2,
+    "n_trials": 20,
+    "n_low_mse": 2,
+    "success_rate": 0.1
+  },
+  {
+    "operator": "psi",
+    "depth": 2,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "operator": "eml",
+    "depth": 3,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "operator": "psi",
+    "depth": 3,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "operator": "eml",
+    "depth": 4,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "operator": "psi",
+    "depth": 4,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "operator": "eml",
+    "depth": 5,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "operator": "psi",
+    "depth": 5,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  }
+]

@@ -11,20 +11,32 @@ relationship is exponential, logarithmic, or power-law. On such targets
 this approach extrapolates correctly beyond the training range —
 something tree-based models (EBM, XGBoost) fundamentally cannot do.
 
-The project has two scientific contributions on top of the base
+The project has four scientific contributions on top of the base
 implementation:
 
 1. A **landscape-geometry study** that quantifies the "scaling wall"
    Odrzywołek flagged as an open problem: random-initialisation
    recovery collapses to 0 per cent at depth 3 and beyond, and the
    recovered-snap basin radius shrinks monotonically with depth.
-2. **Stability machinery** — adaptive multi-start with warm-start
+2. A **cross-operator replication** showing that the same collapse
+   appears in a smooth-Sheffer surrogate
+   `ψ(x, y) = sinh(x) − arsinh(y)`. The landscape failure is
+   therefore **intrinsic to iterated Sheffer composition**, not to
+   the exponential/logarithmic asymptotics of `eml` specifically.
+3. A **partial theoretical analysis** of whether ψ can be a Sheffer
+   operator in Odrzywołek's sense. We reduce the question to a
+   concrete open subproblem — is there a finite ψ-expression over
+   `{1, x}` that vanishes at `x = 0`? — and give a negative result
+   for the terminal-free case. See [docs/sheffer_analysis.md](docs/sheffer_analysis.md).
+4. **Stability machinery** — adaptive multi-start with warm-start
    rotation, a NaN-abort guard, and an optional extrapolation penalty —
    that eliminates the previously-reported divergence on bivariate
    rational targets without sacrificing accuracy on the targets the
    method already handled well.
 
-See [docs/theory.md](docs/theory.md) for the full write-up and references.
+See [docs/theory.md](docs/theory.md) for the theoretical background and
+[docs/sheffer_analysis.md](docs/sheffer_analysis.md) for the
+ψ-Sheffer analysis.
 
 ## Why this exists
 
@@ -87,6 +99,35 @@ Reproduce:
 ```bash
 python -m eml_gam.benchmarks.landscape
 # writes landscape_results.json with per-cell success rates
+python -m scripts.make_landscape_figure
+# writes figures/landscape_heatmap.png + landscape_basin_curves.png
+```
+
+Paper-ready figures are written into `figures/` (PNG, 160 dpi).
+
+### Cross-operator landscape (ψ vs eml)
+
+Running the same random-init experiment with `psi(x, y) = sinh(x) −
+arsinh(y)` instead of `eml(x, y) = exp(x) − log(y)` gives:
+
+| depth | eml success | ψ success |
+|------:|------------:|----------:|
+| 2     | 10%         | 0%        |
+| 3     | 0%          | 0%        |
+| 4     | 0%          | 0%        |
+| 5     | 0%          | 0%        |
+
+Both operators show the depth-collapse at identical rates. This rules
+out "the exp clamp" as the explanation and supports the conjecture that
+basin-width collapse is intrinsic to the iterated-Sheffer structure.
+See [docs/sheffer_analysis.md](docs/sheffer_analysis.md) for the
+theoretical discussion and the open subproblem whose answer would
+resolve Odrzywołek's open problem #1.
+
+Reproduce:
+
+```bash
+python -m eml_gam.benchmarks.cross_operator_landscape
 ```
 
 ### Extrapolation benchmark (synthetic scientific targets)
@@ -185,20 +226,31 @@ comparisons:
 * **Nguyen-12** (`eml_gam/benchmarks/nguyen.py`): the classic 12-target
   SR micro-benchmark. EML-GA²M wins on polynomial targets (N1-N4) and
   loses on pure trig targets (N5, N9-N10) as expected — no depth-2 EML
-  snap represents `sin(x^2) cos(x)` directly.
+  snap represents `sin(x^2) cos(x)` directly. **PySR** beats
+  EML-GA²M on every Nguyen target it tested; this is the honest
+  out-of-niche baseline.
 * **Feynman subset** (`eml_gam/benchmarks/feynman.py`): ten physics
   equations drawn from Feynman-AI-100, biased toward the EML class
   (Gaussian, Shockley diode, radioactive decay, relativistic energy,
   Stefan-Boltzmann, ideal gas, Coulomb, Planck, centripetal, power
   dissipation). Both interpolation and extrapolation splits are
-  reported. EML-GA²M wins on every extrapolation split of the targets
-  it can represent.
+  reported.
+
+**PySR baseline.** `eml_gam/benchmarks/pysr_baseline.py` wraps the
+state-of-the-art PySR symbolic regressor (Cranmer 2023) in the same
+`fit / predict` interface as the rest of the library. PySR uses a
+richer operator set (`+`, `-`, `*`, `/`, `exp`, `log`) and a mature
+genetic-programming kernel. On Nguyen-12 it outperforms EML-GA²M
+across the board. The EML-GA²M advantage is therefore **not a general
+SR advantage**; it is specifically an *extrapolation* advantage on
+targets inside the depth-2 EML atlas.
 
 Reproduce:
 
 ```bash
 python -m eml_gam.benchmarks.nguyen
 python -m eml_gam.benchmarks.feynman
+pip install pysr  # optional; enables the PySR baseline column
 ```
 
 ### Additional UCI datasets

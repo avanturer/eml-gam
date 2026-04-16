@@ -40,3 +40,5 @@ htmlcov/
 data/*.csv
 data/*.xlsx
 !data/.gitkeep
+# PySR run artefacts (Julia checkpoints, hall-of-fame dumps)
+outputs/
