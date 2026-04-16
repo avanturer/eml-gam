@@ -183,6 +183,44 @@ def test_psi_tree_forward_is_finite_without_clamping():
     assert torch.isfinite(out).all()
 
 
+def test_aees_recovers_depth_2_target_exactly():
+    """AEES must find the ground-truth snap for any depth-2 target."""
+    from eml_gam.atlas_expansion import aees_recover
+    from eml_gam.benchmarks.landscape import _generate_data
+
+    x, y, target_snap = _generate_data(depth=2, seed=0)
+    recovered, best = aees_recover(x, y, depth=2, n_inputs=1,
+                                   r2_threshold=0.999)
+    assert recovered, (recovered, best.r2 if best else None)
+    assert best.r2 >= 0.999, best.r2
+
+
+def test_aees_enumerate_count_matches_formula():
+    """Number of enumerated snaps must match the analytic formula."""
+    from eml_gam.atlas_expansion import _count_snaps, enumerate_snaps
+    for depth, n_inputs in [(1, 1), (2, 1), (1, 2), (2, 2)]:
+        count_formula = _count_snaps(depth, n_inputs)
+        count_actual = sum(1 for _ in enumerate_snaps(depth, n_inputs))
+        assert count_actual == count_formula, (
+            depth, n_inputs, count_actual, count_formula,
+        )
+
+
+def test_cross_operator_target_data_uses_correct_operator():
+    """Symmetric cross-operator experiment must produce distinct targets
+    depending on which operator generates them."""
+    from eml_gam.benchmarks.cross_operator_landscape import _target_data
+    x_e, y_e = _target_data(depth=2, target_operator="eml")
+    x_p, y_p = _target_data(depth=2, target_operator="psi")
+    # Same grid of x (deterministic generation), but different y because
+    # the atom differs.
+    assert torch.allclose(x_e[: min(len(x_e), len(x_p))],
+                          x_p[: min(len(x_e), len(x_p))])
+    # If y_e and y_p are numerically equal, the experiment has a bug.
+    if len(y_e) == len(y_p):
+        assert not torch.allclose(y_e, y_p, atol=1e-6)
+
+
 if __name__ == "__main__":
     fns = [v for k, v in dict(globals()).items() if k.startswith("test_")]
     for fn in fns:

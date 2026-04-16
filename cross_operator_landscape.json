@@ -1,58 +1,130 @@
 [
   {
-    "operator": "eml",
+    "target_operator": "eml",
+    "solver_operator": "eml",
     "depth": 2,
     "n_trials": 20,
     "n_low_mse": 2,
     "success_rate": 0.1
   },
   {
-    "operator": "psi",
+    "target_operator": "eml",
+    "solver_operator": "psi",
     "depth": 2,
     "n_trials": 20,
     "n_low_mse": 0,
     "success_rate": 0.0
   },
   {
-    "operator": "eml",
+    "target_operator": "psi",
+    "solver_operator": "eml",
+    "depth": 2,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "target_operator": "psi",
+    "solver_operator": "psi",
+    "depth": 2,
+    "n_trials": 20,
+    "n_low_mse": 20,
+    "success_rate": 1.0
+  },
+  {
+    "target_operator": "eml",
+    "solver_operator": "eml",
     "depth": 3,
     "n_trials": 20,
     "n_low_mse": 0,
     "success_rate": 0.0
   },
   {
-    "operator": "psi",
+    "target_operator": "eml",
+    "solver_operator": "psi",
     "depth": 3,
     "n_trials": 20,
     "n_low_mse": 0,
     "success_rate": 0.0
   },
   {
-    "operator": "eml",
+    "target_operator": "psi",
+    "solver_operator": "eml",
+    "depth": 3,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "target_operator": "psi",
+    "solver_operator": "psi",
+    "depth": 3,
+    "n_trials": 20,
+    "n_low_mse": 20,
+    "success_rate": 1.0
+  },
+  {
+    "target_operator": "eml",
+    "solver_operator": "eml",
     "depth": 4,
     "n_trials": 20,
     "n_low_mse": 0,
     "success_rate": 0.0
   },
   {
-    "operator": "psi",
+    "target_operator": "eml",
+    "solver_operator": "psi",
     "depth": 4,
     "n_trials": 20,
     "n_low_mse": 0,
     "success_rate": 0.0
   },
   {
-    "operator": "eml",
+    "target_operator": "psi",
+    "solver_operator": "eml",
+    "depth": 4,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "target_operator": "psi",
+    "solver_operator": "psi",
+    "depth": 4,
+    "n_trials": 20,
+    "n_low_mse": 2,
+    "success_rate": 0.1
+  },
+  {
+    "target_operator": "eml",
+    "solver_operator": "eml",
     "depth": 5,
     "n_trials": 20,
     "n_low_mse": 0,
     "success_rate": 0.0
   },
   {
-    "operator": "psi",
+    "target_operator": "eml",
+    "solver_operator": "psi",
     "depth": 5,
     "n_trials": 20,
     "n_low_mse": 0,
     "success_rate": 0.0
+  },
+  {
+    "target_operator": "psi",
+    "solver_operator": "eml",
+    "depth": 5,
+    "n_trials": 20,
+    "n_low_mse": 0,
+    "success_rate": 0.0
+  },
+  {
+    "target_operator": "psi",
+    "solver_operator": "psi",
+    "depth": 5,
+    "n_trials": 20,
+    "n_low_mse": 4,
+    "success_rate": 0.2
   }
 ]

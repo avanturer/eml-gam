@@ -1,5 +1,6 @@
 """EML-GA²M: gradient-trained symbolic GAM with pairwise interactions."""
 
+from .atlas_expansion import AtlasCandidate, aees_recover, aees_search
 from .eml_tree import EMLTree
 from .gam import EMLGAM
 from .interaction_select import select_pairs
@@ -33,6 +34,9 @@ __all__ = [
     "bivariate_atlas_depth2",
     "warm_start_tree",
     "rank_atlas_candidates",
+    "AtlasCandidate",
+    "aees_search",
+    "aees_recover",
     "format_formula",
     "complexity",
     "to_numpy_fn",
