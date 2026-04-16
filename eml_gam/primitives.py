@@ -299,7 +299,10 @@ def best_primitive_for_feature(
     return best_cfg, best_r2
 
 
-def warm_start_tree(
+RankedCandidate = tuple[float, PrimitiveConfig, list[float], list[float]]
+
+
+def rank_atlas_candidates(
     tree: EMLTree,
     atlas: list[PrimitiveConfig],
     x: torch.Tensor,
@@ -308,18 +311,15 @@ def warm_start_tree(
     try_offsets: bool = True,
     simplicity_tol: float = 0.10,
     use_holdout: bool = True,
-) -> PrimitiveConfig:
-    """Install the best atlas entry into the given tree.
+) -> list[RankedCandidate]:
+    """Rank every ``(primitive, sign, offset)`` combination by holdout R².
 
-    Every combination of ``(sign_vector, offset_vector, primitive)`` is
-    scored with ``score_primitive``.  The offset search tries shifting each
-    input by a few data-driven values (0, median, various percentiles).
-    This is critical for rational-function targets like Michaelis–Menten
-    ``v = Vmax * S / (Km + S)``: the primitive ``e^e / x`` evaluated at
-    ``x + Km`` gives a near-exact fit, but at ``x`` alone it does not.
-
-    An adaptive tolerance prefers simpler atlas entries when several
-    candidates score within a small margin.
+    Returns a list of ``(score, cfg, signs, offsets)`` sorted best-first with
+    the simplicity-tolerance tie-break baked in. The list is the union of the
+    zero-offset and rational-offset branches used by :func:`warm_start_tree`.
+    It is used by ``_fit_multistart`` to rotate warm-start candidates across
+    restarts, and by the landscape experiments to study initialisation
+    diversity.
     """
     candidates = [
         c for c in atlas if c.depth == tree.depth and c.n_inputs == tree.n_inputs
@@ -336,7 +336,6 @@ def warm_start_tree(
     else:
         sign_combos = [[1.0, 1.0], [-1.0, 1.0], [1.0, -1.0], [-1.0, -1.0]]
 
-    # Build offset candidates per input dimension.
     if try_offsets and tree.use_input_affine:
         x_np = x.detach().cpu().numpy()
         offset_candidates: list[list[float]] = []
@@ -351,7 +350,6 @@ def warm_start_tree(
         if tree.n_inputs == 1:
             offset_combos = [[o] for o in offset_candidates[0]]
         else:
-            # For bivariate: only try offsets on one dim at a time
             offset_combos = [[0.0, 0.0]]
             for o in offset_candidates[0]:
                 if o != 0.0:
@@ -362,9 +360,8 @@ def warm_start_tree(
     else:
         offset_combos = [[0.0] * tree.n_inputs]
 
-    # Score all (sign, offset, primitive) combinations.
-    Candidate = tuple[float, int, list[float], list[float], PrimitiveConfig]
-    all_ranked: list[Candidate] = []
+    FullRow = tuple[float, int, list[float], list[float], PrimitiveConfig]
+    all_ranked: list[FullRow] = []
     for signs in sign_combos:
         sign_t = torch.tensor(signs, dtype=x.dtype, device=x.device)
         for offsets in offset_combos:
@@ -376,38 +373,89 @@ def warm_start_tree(
                 )
                 all_ranked.append((r2, idx, signs, offsets, cfg))
 
-    # Step 1: find best among zero-offset candidates (original logic).
     zero_only = [c for c in all_ranked if all(abs(o) < 1e-8 for o in c[3])]
     best_zero_r2 = max(c[0] for c in zero_only) if zero_only else -np.inf
     zero_tol = max(0.05, min(simplicity_tol, (1.0 - best_zero_r2) * 0.5))
     zero_acceptable = [c for c in zero_only if c[0] >= best_zero_r2 - zero_tol]
-    best_zero = min(zero_acceptable, key=lambda c: (c[1], -c[0]))
+    zero_acceptable.sort(key=lambda c: (c[1], -c[0]))
 
-    # Step 2: check if any offset candidate beats the zero-winner.
-    # Only consider offset for rational-form primitives (e^e/x family).
-    # Log-based primitives with offset inflate holdout R² but extrapolate
-    # poorly (log grows unboundedly, misleading the holdout scorer).
     _offset_ok = {"exp_of_eminuslogx"}
     offset_only = [
         c for c in all_ranked
         if any(abs(o) > 1e-8 for o in c[3]) and c[4].name in _offset_ok
     ]
-    offset_winner = max(offset_only, key=lambda c: c[0]) if offset_only else None
+    offset_only.sort(key=lambda c: -c[0])
 
-    if offset_winner is not None and offset_winner[0] > best_zero[0] + 0.03:
-        chosen = offset_winner
-    else:
-        chosen = best_zero
-    _, _, best_signs, best_offsets, best_cfg = chosen
+    top_zero = zero_acceptable[0] if zero_acceptable else None
+    top_offset = offset_only[0] if offset_only else None
+    ordered: list[FullRow] = []
+    if (
+        top_offset is not None
+        and (top_zero is None or top_offset[0] > top_zero[0] + 0.03)
+    ):
+        ordered.append(top_offset)
+        if top_zero is not None:
+            ordered.append(top_zero)
+    elif top_zero is not None:
+        ordered.append(top_zero)
+        if top_offset is not None:
+            ordered.append(top_offset)
+    elif top_offset is not None:
+        ordered.append(top_offset)
 
-    tree.set_snap_config(best_cfg.snap_choices)
+    seen = {(id(row[4]), tuple(row[2]), tuple(row[3])) for row in ordered}
+    remainder: list[FullRow] = []
+    for row in sorted(all_ranked, key=lambda c: -c[0]):
+        key = (id(row[4]), tuple(row[2]), tuple(row[3]))
+        if key in seen:
+            continue
+        seen.add(key)
+        remainder.append(row)
+    ordered.extend(remainder)
+
+    return [(row[0], row[4], row[2], row[3]) for row in ordered]
+
+
+def _install_candidate(tree: EMLTree, cand: RankedCandidate) -> PrimitiveConfig:
+    _, cfg, signs, offsets = cand
+    tree.set_snap_config(cfg.snap_choices)
     with torch.no_grad():
         tree.input_scale.data.copy_(
-            torch.tensor(best_signs, dtype=DTYPE, device=tree.input_scale.device)
+            torch.tensor(signs, dtype=DTYPE, device=tree.input_scale.device)
         )
         if tree.use_input_affine:
             tree.input_offset.data.copy_(
-                torch.tensor(best_offsets, dtype=DTYPE, device=tree.input_offset.device)
+                torch.tensor(offsets, dtype=DTYPE, device=tree.input_offset.device)
             )
     tree.unsnap()
-    return best_cfg
+    return cfg
+
+
+def warm_start_tree(
+    tree: EMLTree,
+    atlas: list[PrimitiveConfig],
+    x: torch.Tensor,
+    y: torch.Tensor,
+    try_signs: bool = True,
+    try_offsets: bool = True,
+    simplicity_tol: float = 0.10,
+    use_holdout: bool = True,
+    rank: int = 0,
+) -> PrimitiveConfig:
+    """Install the ``rank``-th best atlas entry into the given tree.
+
+    With ``rank == 0`` the best candidate is chosen, which matches the
+    original behaviour. Higher ranks fall back to progressively less
+    well-scoring combinations; the multi-start wrapper uses this to rotate
+    through the top-k candidates on consecutive restarts instead of
+    deterministically re-picking the same primitive every time.
+    """
+    ordered = rank_atlas_candidates(
+        tree, atlas, x, y,
+        try_signs=try_signs, try_offsets=try_offsets,
+        simplicity_tol=simplicity_tol, use_holdout=use_holdout,
+    )
+    if not ordered:
+        raise ValueError("rank_atlas_candidates returned no candidates")
+    k = max(0, min(int(rank), len(ordered) - 1))
+    return _install_candidate(tree, ordered[k])

@@ -21,7 +21,6 @@ import numpy as np
 
 from .utils import to_tensor
 
-
 PairKey = Tuple[int, int]
 
 

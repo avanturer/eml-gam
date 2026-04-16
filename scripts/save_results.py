@@ -20,28 +20,32 @@ def main() -> None:
     torch.manual_seed(0)
     np.random.seed(0)
 
+    def _reseed():
+        torch.manual_seed(0)
+        np.random.seed(0)
+
     synthetic = [dataclasses.asdict(r) for r in run_synthetic(verbose=False)]
-    torch.manual_seed(0); np.random.seed(0)
+    _reseed()
     yacht = [
         dataclasses.asdict(r)
         for r in run_yacht(verbose=False, isolated_physics=True)
     ]
-    torch.manual_seed(0); np.random.seed(0)
+    _reseed()
     auto_mpg = [
         dataclasses.asdict(r)
         for r in run_auto_mpg(verbose=False, isolated_physics=False)
     ]
-    torch.manual_seed(0); np.random.seed(0)
+    _reseed()
     concrete = [
         dataclasses.asdict(r)
         for r in run_concrete(verbose=False, isolated_physics=True)
     ]
-    torch.manual_seed(0); np.random.seed(0)
+    _reseed()
     airfoil = [
         dataclasses.asdict(r)
         for r in run_airfoil(verbose=False, isolated_physics=True)
     ]
-    torch.manual_seed(0); np.random.seed(0)
+    _reseed()
     scale = [dataclasses.asdict(r) for r in run_scalability(verbose=False)]
 
     out = {

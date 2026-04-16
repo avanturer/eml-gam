@@ -113,6 +113,20 @@ class EMLTree(nn.Module):
     def n_params(self) -> int:
         return sum(p.numel() for p in self.level_logits)
 
+    @property
+    def n_slots(self) -> int:
+        """Total number of slot choices across all levels. Each slot is an
+        integer-valued DoF that vanishes once the tree is snapped."""
+        return sum(2 ** (level + 1) for level in range(self.depth))
+
+    @property
+    def n_continuous_post_snap(self) -> int:
+        """Continuous parameters that remain after ``snap``: the per-input
+        scale and offset (when the affine transform is enabled). The output
+        weight belongs to the surrounding :class:`EMLGAM` and is not counted
+        here."""
+        return 2 * self.n_inputs if self.use_input_affine else 0
+
     def _slot_weights(self, level: int) -> torch.Tensor:
         logits = self.level_logits[level]
         return F.softmax(logits / self._temperature, dim=1)

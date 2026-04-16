@@ -38,6 +38,22 @@ class TrainConfig:
     grad_clip: float = 1.0
     patience: int = 200
     verbose: bool = False
+    # Extrapolation penalty (EMLGAM only). When ``extrap_penalty_weight > 0``,
+    # at every training step an auxiliary batch is sampled from a margin of
+    # the training box and the predictions on that batch are penalised for
+    # exceeding ``extrap_max_std`` in standardised units. This discourages
+    # closed-form snaps whose derivative outside the training range grows
+    # exponentially (e.g. ``exp(a * x)`` with a large ``a``), which is the
+    # failure mode reported on ``competitive_inhibition`` and ``concrete``.
+    extrap_penalty_weight: float = 0.0
+    extrap_margin: float = 0.5
+    extrap_n_samples: int = 32
+    extrap_max_std: float = 50.0
+    # Adaptive early exit from the hardening stage. If the average softmax
+    # entropy across all slots falls below ``entropy_stop``, hardening
+    # terminates early — the logits are already near one-hot and further
+    # cooling is wasted computation.
+    entropy_stop: float = 0.02
 
 
 def _loss_fn(

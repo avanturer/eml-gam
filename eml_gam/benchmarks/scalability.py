@@ -22,11 +22,11 @@ from ..gam import EMLGAM
 from ..interaction_select import select_pairs
 from ..train import TrainConfig
 from .extrapolation import (
-    _GPlearnWrapper,
     _fit_ebm,
     _fit_gplearn,
     _fit_linear,
     _fit_xgboost,
+    _GPlearnWrapper,
 )
 
 

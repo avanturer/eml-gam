@@ -42,14 +42,13 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
 from .extrapolation import (
-    _GPlearnWrapper,
     _fit_ebm,
     _fit_emlgam,
     _fit_gplearn,
     _fit_linear,
     _fit_xgboost,
+    _GPlearnWrapper,
 )
-
 
 DATA_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),

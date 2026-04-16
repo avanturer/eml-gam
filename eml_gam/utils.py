@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import torch
 
-
 CLAMP_VAL: float = 10.0
 EPS: float = 1e-10
 DTYPE = torch.float64

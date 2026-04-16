@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import copy
 import math
-from dataclasses import dataclass
 from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -33,7 +32,6 @@ import torch.nn as nn
 from .eml_tree import EMLTree
 from .train import TrainConfig
 from .utils import DTYPE, to_tensor
-
 
 PairKey = Tuple[int, int]
 
@@ -209,8 +207,10 @@ class EMLGAM(nn.Module):
         use_holdout: bool = True,
         try_offsets: bool = False,
         n_restarts: int = 1,
+        robust: bool = False,
         atlas_univariate: Optional[list] = None,
         atlas_bivariate: Optional[list] = None,
+        warm_start_rank: int = 0,
     ) -> "EMLGAM":
         """Run the three-stage training schedule on ``(X, y)``.
 
@@ -218,15 +218,28 @@ class EMLGAM(nn.Module):
         ----------
         n_restarts : int
             If > 1, run the full warm-start + training pipeline this many
-            times with different random seeds and keep the result with the
-            lowest training MSE. Addresses seed-dependent convergence.
+            times and keep the result with the lowest training MSE. On
+            consecutive restarts the warm-start rotates through the top-k
+            atlas candidates (rank 0, 1, 2, ...) rather than picking the
+            same primitive deterministically.
+        robust : bool
+            If ``True``, enable multi-start with ``max(3, n_restarts)``
+            restarts and an automatic retry on NaN / Inf failures. Use when
+            the target is sensitive to the warm-start choice (e.g.
+            bivariate rational functions).
+        warm_start_rank : int
+            Index into the ranked atlas-candidate list. ``0`` selects the
+            overall best, higher values try progressively less well-scoring
+            candidates. Primarily used internally by multi-start.
         """
+        if robust and n_restarts < 3:
+            n_restarts = 3
         if n_restarts > 1:
             return self._fit_multistart(
                 X, y, cfg=cfg, interaction_pairs=interaction_pairs,
                 verbose=verbose, warm_start=warm_start,
                 use_holdout=use_holdout, try_offsets=try_offsets,
-                n_restarts=n_restarts,
+                n_restarts=n_restarts, robust=robust,
                 atlas_univariate=atlas_univariate,
                 atlas_bivariate=atlas_bivariate,
             )
@@ -241,7 +254,6 @@ class EMLGAM(nn.Module):
                 self.x_mean.copy_(mean)
                 self.x_std.copy_(std)
                 if self.scale_normalize:
-                    # Only normalise features whose scale is pathological.
                     keep_mask = (std >= 0.1) & (std <= 10.0)
                     effective_std = torch.where(
                         keep_mask, torch.ones_like(std), std
@@ -264,7 +276,7 @@ class EMLGAM(nn.Module):
             self._warm_start_trees(
                 x, y_work, atlas_univariate, atlas_bivariate,
                 verbose=verbose, use_holdout=use_holdout,
-                try_offsets=try_offsets,
+                try_offsets=try_offsets, rank=warm_start_rank,
             )
 
         optim = torch.optim.Adam(self.parameters(), lr=cfg.lr)
@@ -279,6 +291,20 @@ class EMLGAM(nn.Module):
         self.set_temperature(cfg.temp_start)
         best_mse = float("inf")
         bad = 0
+        self._last_fit_failed = False
+        self._last_final_mse = float("inf")
+
+        extrap_w = float(getattr(cfg, "extrap_penalty_weight", 0.0))
+        extrap_margin = float(getattr(cfg, "extrap_margin", 0.5))
+        extrap_n = int(getattr(cfg, "extrap_n_samples", 32))
+        extrap_max = float(getattr(cfg, "extrap_max_std", 5.0))
+        entropy_stop = float(getattr(cfg, "entropy_stop", 0.0))
+
+        if extrap_w > 0.0:
+            with torch.no_grad():
+                x_lo = x.min(dim=0).values.detach()
+                x_hi = x.max(dim=0).values.detach()
+                x_rg = (x_hi - x_lo).clamp(min=1e-12)
 
         for epoch in range(n_warmup + n_harden):
             in_hardening = epoch >= n_warmup
@@ -300,6 +326,24 @@ class EMLGAM(nn.Module):
             pred = self(xb)
             mse = torch.mean((pred - yb) ** 2)
             loss = mse + cfg.entropy_weight * self.entropy()
+
+            if extrap_w > 0.0:
+                u = torch.rand(
+                    extrap_n, x.shape[1], dtype=x.dtype, device=x.device
+                )
+                lo = x_lo - extrap_margin * x_rg
+                hi = x_hi + extrap_margin * x_rg
+                x_synth = lo + u * (hi - lo)
+                pred_synth = self(x_synth)
+                excess = torch.relu(pred_synth.abs() - extrap_max)
+                loss = loss + extrap_w * torch.mean(excess ** 2)
+
+            if not torch.isfinite(loss):
+                self._last_fit_failed = True
+                if verbose:
+                    print(f"  [abort] loss non-finite at epoch={epoch}")
+                break
+
             loss.backward()
             nn.utils.clip_grad_norm_(self.parameters(), cfg.grad_clip)
             optim.step()
@@ -326,8 +370,25 @@ class EMLGAM(nn.Module):
                 and epoch > n_warmup // 4
             ):
                 break
+            if (
+                in_hardening
+                and entropy_stop > 0.0
+                and float(self.entropy().item()) < entropy_stop
+            ):
+                # Logits already concentrated on a single option at every
+                # slot; further hardening steps cannot change the snap.
+                break
 
         self.snap_all()
+        with torch.no_grad():
+            pred_final = self(x)
+            if torch.isfinite(pred_final).all():
+                self._last_final_mse = float(
+                    torch.mean((pred_final - y_work) ** 2).item()
+                )
+            else:
+                self._last_fit_failed = True
+                self._last_final_mse = float("inf")
         self._fitted = True
         return self
 
@@ -340,9 +401,19 @@ class EMLGAM(nn.Module):
         verbose: bool = False,
         use_holdout: bool = True,
         try_offsets: bool = False,
+        rank: int = 0,
     ) -> None:
         """Install warm-start snap configurations by fitting a primitive per
-        component against the current residual."""
+        component against the current residual.
+
+        ``rank == 0`` matches the default best-primitive behaviour;
+        ``rank > 0`` rotates bivariate components through alternative
+        candidates on multi-start retries. Univariate components are
+        intentionally left at rank 0 because their atlas is well-ordered
+        by simplicity and rotating them tends to regress more than it
+        helps; bivariate rotation is where the multi-start win comes
+        from on rational / interaction targets.
+        """
         from .primitives import default_atlas, warm_start_tree
 
         x_z = self._standardize(x) if self.standardize else x
@@ -355,10 +426,12 @@ class EMLGAM(nn.Module):
             with torch.no_grad():
                 self.bias.fill_(residual.mean().item())
             residual = residual - self.bias.detach()
+            uni_rank = rank // 2 if rank > 0 else 0
             for i, tree in enumerate(self.univariate_trees):
                 best = warm_start_tree(
                     tree, atlas_uni, x_z[:, i : i + 1], residual,
                     use_holdout=use_holdout, try_offsets=try_offsets,
+                    rank=uni_rank,
                 )
                 with torch.no_grad():
                     values = tree(x_z[:, i : i + 1])
@@ -375,8 +448,9 @@ class EMLGAM(nn.Module):
                     residual = residual - beta * values
                 if verbose:
                     print(
-                        f"  warm-start uni[{i}] <- '{best.name}'  "
-                        f"beta={beta:+.3f}  sign={tree.input_scale.tolist()}"
+                        f"  warm-start uni[{i}] <- '{best.name}' "
+                        f"rank={uni_rank} beta={beta:+.3f} "
+                        f"sign={tree.input_scale.tolist()}"
                     )
 
         if len(self.bivariate_trees) > 0:
@@ -390,6 +464,7 @@ class EMLGAM(nn.Module):
                 best = warm_start_tree(
                     tree, atlas_bi, x_z[:, [i, j]], residual,
                     use_holdout=use_holdout, try_offsets=try_offsets,
+                    rank=rank,
                 )
                 with torch.no_grad():
                     values = tree(x_z[:, [i, j]])
@@ -406,22 +481,37 @@ class EMLGAM(nn.Module):
                     residual = residual - beta * values
                 if verbose:
                     print(
-                        f"  warm-start bi[{i},{j}] <- '{best.name}'  "
-                        f"beta={beta:+.3f}"
+                        f"  warm-start bi[{i},{j}] <- '{best.name}' "
+                        f"rank={rank} beta={beta:+.3f}"
                     )
 
         with torch.no_grad():
             self.bias.add_(residual.mean())
 
-    def _fit_multistart(self, X, y, *, n_restarts, **kwargs) -> "EMLGAM":
-        """Run fit() multiple times and keep the best result."""
+    def _fit_multistart(
+        self, X, y, *, n_restarts, robust=False, **kwargs
+    ) -> "EMLGAM":
+        """Run ``fit`` multiple times and keep the best result.
+
+        Consecutive restarts rotate the bivariate warm-start rank
+        (0, 1, 2, ...), so each restart explores a different region of
+        primitive space instead of deterministically re-picking the same
+        candidate. Failed runs (NaN / Inf loss, or final MSE non-finite)
+        are skipped. When ``robust`` is true, an additional retry with a
+        fresh random seed is spawned for every failure, up to
+        ``2 * n_restarts`` attempts in total.
+        """
         best_state = None
         best_mse = float("inf")
         verbose = kwargs.get("verbose", False)
         x_t = to_tensor(X)
         y_t = to_tensor(y).reshape(-1)
-        for i in range(n_restarts):
-            # Reset all tree parameters for a fresh start
+        max_attempts = 2 * n_restarts if robust else n_restarts
+        attempt = 0
+        successful = 0
+        while attempt < max_attempts and successful < n_restarts:
+            attempt += 1
+            # Reset all tree parameters for a fresh start.
             for tree in self._all_trees():
                 tree.reset_parameters()
             self.bias.data.zero_()
@@ -431,25 +521,69 @@ class EMLGAM(nn.Module):
                 w.data.fill_(1.0)
             self._fitted = False
 
-            # Fit with single restart
             kwargs_single = dict(kwargs)
             kwargs_single["n_restarts"] = 1
+            kwargs_single["robust"] = False
+            kwargs_single["warm_start_rank"] = successful
             self.fit(X, y, **kwargs_single)
 
+            failed = bool(getattr(self, "_last_fit_failed", False))
             with torch.no_grad():
                 pred = self(x_t)
-                y_work = (y_t - self.y_mean) / self.y_std if self.standardize else y_t
-                mse = torch.mean((pred - y_work) ** 2).item()
+                if not torch.isfinite(pred).all():
+                    failed = True
+                    mse = float("inf")
+                else:
+                    y_work = (
+                        (y_t - self.y_mean) / self.y_std
+                        if self.standardize else y_t
+                    )
+                    mse = float(torch.mean((pred - y_work) ** 2).item())
             if verbose:
-                print(f"  [restart {i + 1}/{n_restarts}] train_mse={mse:.3e}")
+                status = "FAIL" if failed else "ok"
+                print(
+                    f"  [restart {attempt}/{max_attempts}] "
+                    f"rank={successful} mse={mse:.3e} [{status}]"
+                )
+            if failed:
+                continue
+            successful += 1
             if mse < best_mse:
                 best_mse = mse
                 best_state = copy.deepcopy(self.state_dict())
         if best_state is not None:
             self.load_state_dict(best_state)
+        else:
+            if verbose:
+                print("  [multistart] all attempts failed; keeping last state")
         self.snap_all()
         self._fitted = True
+        self._last_final_mse = best_mse
         return self
+
+    def param_summary(self) -> dict:
+        """Return a breakdown of EMLGAM parameters relevant for complexity
+        analysis and the effective-DoF discussion in the theory section.
+
+        Keys:
+          ``n_raw_logits`` : total softmax logits (only live before snap)
+          ``n_slot_choices`` : integer slot DoF that vanish after snap
+          ``n_continuous_post_snap`` : scale + offset + output weights + bias
+        """
+        trees = self._all_trees()
+        n_out_weights = len(self.univariate_trees) + len(self.bivariate_trees)
+        return {
+            "n_trees": len(trees),
+            "n_features": self.n_features,
+            "n_pairs": len(self.bivariate_trees),
+            "n_raw_logits": sum(t.n_params for t in trees),
+            "n_slot_choices": sum(t.n_slots for t in trees),
+            "n_continuous_post_snap": (
+                sum(t.n_continuous_post_snap for t in trees)
+                + n_out_weights
+                + 1  # bias
+            ),
+        }
 
     @torch.no_grad()
     def predict(self, X, clip_factor: float = 0.0) -> np.ndarray:

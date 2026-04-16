@@ -124,6 +124,65 @@ def test_multi_start_runs_all():
     assert info["final_mse"] == min(r["final_mse"] for r in info["per_run"])
 
 
+def test_emlgam_robust_fit_produces_finite_predictions():
+    """robust=True must never leak a non-finite prediction, even on the
+    adversarial bivariate rational target competitive_inhibition."""
+    from eml_gam.benchmarks.scientific import competitive_inhibition
+    ds = competitive_inhibition(n_train=256, seed=1)
+    model = EMLGAM(
+        n_features=2, univariate_depth=2, bivariate_depth=2,
+        feature_names=ds.feature_names,
+        interaction_pairs=[(0, 1)],
+    )
+    cfg = TrainConfig(
+        n_epochs=600, lr=5e-2,
+        extrap_penalty_weight=0.01, extrap_max_std=50.0,
+    )
+    model.fit(ds.X_train, ds.y_train, cfg=cfg, warm_start=True,
+              try_offsets=True, robust=True)
+    pred = model.predict(ds.X_test_extrap)
+    assert np.all(np.isfinite(pred)), "robust fit produced non-finite predictions"
+
+
+def test_param_summary_returns_expected_keys():
+    model = EMLGAM(
+        n_features=3, univariate_depth=2, bivariate_depth=2,
+        interaction_pairs=[(0, 1), (1, 2)],
+    )
+    s = model.param_summary()
+    for key in ("n_trees", "n_features", "n_pairs",
+                "n_raw_logits", "n_slot_choices", "n_continuous_post_snap"):
+        assert key in s, (key, s)
+    assert s["n_trees"] == 3 + 2
+    assert s["n_pairs"] == 2
+
+
+def test_landscape_target_snap_produces_expected_formulas():
+    """Nested exp/log construction must yield the advertised symbolic forms."""
+    from eml_gam.benchmarks.landscape import target_snap_elog_iterated_exp
+    from eml_gam.eml_tree import EMLTree
+    for depth, expected in [
+        (1, "E - log(x)"),
+        (2, "E - log(exp(x))"),
+        (3, "E - log(exp(exp(x)))"),
+    ]:
+        snap = target_snap_elog_iterated_exp(depth)
+        tree = EMLTree(depth=depth, n_inputs=1, use_input_affine=False)
+        tree.set_snap_config(snap)
+        got = str(tree.get_symbolic_expression(["x"], simplify=True))
+        assert got == expected, (depth, got, expected)
+
+
+def test_psi_tree_forward_is_finite_without_clamping():
+    """Smooth Sheffer tree must produce finite output even for inputs that
+    would require heavy clamping in EML."""
+    from eml_gam import PsiTree
+    tree = PsiTree(depth=3, n_inputs=1)
+    x = torch.linspace(-3.0, 3.0, 64, dtype=torch.float64).unsqueeze(1)
+    out = tree(x)
+    assert torch.isfinite(out).all()
+
+
 if __name__ == "__main__":
     fns = [v for k, v in dict(globals()).items() if k.startswith("test_")]
     for fn in fns:
