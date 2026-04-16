@@ -288,9 +288,117 @@ def aees_search_unbranched(
     return results[:top_k]
 
 
+def _combine_subtrees_under_double_branch(
+    left_snap: dict[int, torch.Tensor],
+    right_snap: dict[int, torch.Tensor],
+    target_depth: int,
+) -> dict[int, torch.Tensor]:
+    """Combine two depth-``(d - 1)`` subtree snaps into a double-branched
+    depth-``d`` snap.
+
+    Root gets ``[2, 2]`` (both slots use ``f_child``). At every subsequent
+    level the first half of the slots is copied from ``left_snap`` at the
+    matching sub-level and the second half from ``right_snap``. This is
+    the smallest extension of unbranched enumeration that admits genuine
+    branching of the target function.
+    """
+    assert target_depth >= 2
+    snap: dict[int, torch.Tensor] = {
+        0: torch.tensor([2, 2], dtype=torch.long),
+    }
+    for k_new in range(1, target_depth):
+        n_slots = 2 ** (k_new + 1)
+        new_slots = torch.zeros(n_slots, dtype=torch.long)
+        half = n_slots // 2
+        sub_level = k_new - 1
+        new_slots[:half] = left_snap[sub_level]
+        new_slots[half:] = right_snap[sub_level]
+        snap[k_new] = new_slots
+    return snap
+
+
+def aees_search_double_branched_univariate(
+    x: torch.Tensor,
+    y: torch.Tensor,
+    depth: int,
+    top_k: int = 10,
+    verbose: bool = False,
+) -> list[AtlasCandidate]:
+    """AEES restricted to double-branched snaps with unbranched subtrees.
+
+    The enumerated class is snaps with root configuration ``[2, 2]``
+    (both slots take the ``f_child`` option) whose two subtrees are each
+    depth-``(d - 1)`` unbranched snaps. The total count is
+    ``(4^{d-1})^2 = 16^{d-1}``, which is 64 at depth 3, 4096 at depth 4,
+    65 536 at depth 5, and about 1 million at depth 6. Every branched
+    target that is a combination of two nested function chains lies in
+    this class.
+
+    Combined with :func:`aees_search_unbranched`, this extends AEES from
+    single-path nested-chain targets to double-path branched targets
+    while retaining tractable enumeration costs at practical depths.
+    """
+    assert depth >= 2
+    if x.dim() == 1:
+        x = x.unsqueeze(1)
+    assert x.shape[1] == 1
+
+    y_np = y.detach().cpu().numpy().astype(np.float64)
+    y_mean = float(y_np.mean())
+    ss_tot = float(np.sum((y_np - y_mean) ** 2))
+    if ss_tot < 1e-20:
+        ss_tot = 1.0
+
+    # Pre-compute the outputs of every unbranched subtree at depth d-1.
+    sub_depth = depth - 1
+    scaffold_sub = EMLTree(
+        depth=sub_depth, n_inputs=1, use_input_affine=False,
+    )
+    subtree_info: list[tuple[dict[int, torch.Tensor], np.ndarray]] = []
+    for snap in enumerate_unbranched_snaps_univariate(sub_depth):
+        scaffold_sub.set_snap_config(snap)
+        with torch.no_grad():
+            out = scaffold_sub(x).detach().cpu().numpy().astype(np.float64)
+        subtree_info.append((snap, out))
+
+    n_sub = len(subtree_info)
+    if verbose:
+        print(f"  double-branched AEES: "
+              f"{n_sub} subtrees x {n_sub} subtrees = {n_sub ** 2} pairs")
+
+    # For each pair, combine via eml = exp - log and score.
+    results: list[AtlasCandidate] = []
+    for snap_L, out_L in subtree_info:
+        exp_L = np.exp(np.clip(out_L, -10.0, 10.0))
+        for snap_R, out_R in subtree_info:
+            log_R = np.log(np.clip(out_R, 1e-10, None))
+            combined = exp_L - log_R
+            if not np.all(np.isfinite(combined)) or np.std(combined) < 1e-12:
+                continue
+            m = combined.mean()
+            v = combined.var()
+            cov = np.mean((combined - m) * (y_np - y_mean))
+            beta = cov / max(v, 1e-30)
+            alpha = y_mean - beta * m
+            resid = y_np - (alpha + beta * combined)
+            r2 = 1.0 - float(np.sum(resid ** 2)) / ss_tot
+            full_snap = _combine_subtrees_under_double_branch(
+                snap_L, snap_R, depth,
+            )
+            results.append(
+                AtlasCandidate(
+                    snap=full_snap, r2=r2,
+                    alpha=alpha, beta=float(beta),
+                )
+            )
+    results.sort(key=lambda c: -c.r2)
+    return results[:top_k]
+
+
 __all__ = [
     "AtlasCandidate", "aees_search", "aees_recover",
     "enumerate_snaps",
     "enumerate_unbranched_snaps_univariate",
     "aees_search_unbranched",
+    "aees_search_double_branched_univariate",
 ]

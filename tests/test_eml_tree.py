@@ -224,6 +224,26 @@ def test_unbranched_enumeration_count():
         assert count == 4 ** depth, (depth, count, 4 ** depth)
 
 
+def test_double_branched_aees_recovers_constructed_target():
+    """Double-branched AEES must recover a hand-constructed branched
+    target at depth 3 (R2 = 1)."""
+    from eml_gam.atlas_expansion import (
+        aees_search_double_branched_univariate,
+    )
+    target_snap = {
+        0: torch.tensor([2, 2], dtype=torch.long),
+        1: torch.tensor([2, 0, 0, 2], dtype=torch.long),
+        2: torch.tensor([1, 0, 0, 0, 0, 0, 0, 1], dtype=torch.long),
+    }
+    tree = EMLTree(depth=3, n_inputs=1, use_input_affine=False)
+    tree.set_snap_config(target_snap)
+    x = torch.linspace(0.5, 2.0, 128, dtype=torch.float64).unsqueeze(1)
+    with torch.no_grad():
+        y = tree(x)
+    top = aees_search_double_branched_univariate(x, y, depth=3, top_k=1)
+    assert top and top[0].r2 >= 0.999, top[0].r2 if top else None
+
+
 def test_cross_operator_target_data_uses_correct_operator():
     """Symmetric cross-operator experiment must produce distinct targets
     depending on which operator generates them."""

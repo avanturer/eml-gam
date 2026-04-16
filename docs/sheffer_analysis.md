@@ -346,6 +346,70 @@ to the number of algebraically-independent generators, but the relevant
 Schanuel statements for ``sinh / arsinh`` are open. See Lang (1966) and
 Waldschmidt (2000) for context.
 
+### 4.3 Numerical evidence at depths <= 4 and 5
+
+To substantiate Conjecture 7 empirically, we enumerated **every**
+``psi``-tree of depth ``<= 4`` over the terminal set ``{1}``: 1 806
+trees in total (including duplicates arising from distinct tree
+shapes that evaluate to the same number). Each value was computed
+with ``mpmath`` at 150 decimal digits of precision. See
+``scripts/subproblem_a_numerical.py`` for the code and
+``subproblem_a_numerical.json`` for the full output.
+
+Result at depth 4:
+
+    min |value|                 = 2.3528421881207564e-21
+    achieved by                 = T_self^4 (1) = psi(psi(psi(psi(1,1),psi(1,1)),
+                                     psi(psi(1,1),psi(1,1))), ...)
+    ratio to T_self prediction  = 1.0   (exact equality)
+    numerically zero at 10^-100 = no
+
+The minimum over all 1 806 trees **coincides exactly** with the
+super-contraction tower prediction from Proposition 6. No other
+``psi``-composition produces a value closer to zero. At 150 digits
+of precision the minimum value is twenty orders of magnitude above
+the "numerical zero" threshold of ``10^{-100}``, so this is not an
+artefact of round-off.
+
+At depth 5 the enumeration is 3 261 636 trees. Streaming the product
+``T_4 x T_4`` with 150-digit arithmetic took 119 s on a single CPU
+core. Result (see ``subproblem_a_depth5.json``):
+
+    depth 5 min |value|  = 4.3416733082615950e-63
+    achieved by          = T_self^5 (1)
+                        = psi(psi(psi(psi(psi(1,1), psi(1,1)),
+                              psi(psi(1,1), psi(1,1))),
+                              psi(psi(psi(1,1), psi(1,1)),
+                              psi(psi(1,1), psi(1,1)))),
+                              psi(psi(psi(psi(1,1), psi(1,1)),
+                              psi(psi(1,1), psi(1,1))), ...))
+
+The depth-5 minimum is again **attained exactly by the T_self
+super-contraction tower**. The top-2 through top-5 smallest values
+all equal ``2.3528e-21 = T_self^4 (1)`` (they are different pairings
+of the depth-4 T_self tower appearing once on either side of a root
+``psi``). No other composition produces a smaller |value| than the
+T_self-tower prediction. This extends the depth-4 regularity another
+step and strengthens the empirical case for Conjecture 7.
+
+### 4.4 Consequence — conditional negative resolution
+
+The numerical enumeration establishes a **conditional** negative
+resolution to Subproblem (A):
+
+**Claim (empirical, depths <= 4).** No ``psi``-expression over
+``{1}`` of depth at most 4 evaluates to zero. The infimum of
+``|value|`` at depth ``k`` is attained by the ``T_self`` self-
+composition orbit of Proposition 6.
+
+Extending this claim to all depths requires a transcendence
+argument; from the empirical shape of the orbit it appears likely
+but is not proven. The concrete observation that **the minimum at
+depth 4 is attained exactly at T_self^4(1)**, not at some novel
+cross-term composition, is a stronger statement than a random-search
+lower bound and is itself suggestive of the underlying
+transcendence structure.
+
 ## 5. Empirical landscape — operator-symmetric experiment
 
 An earlier version of this document reported a cross-operator

@@ -27,20 +27,27 @@ implementation:
    depth wall is a consequence of the clamp-induced non-smoothness
    of exp/log, not of iterated Sheffer composition.
 3. **Atlas Expansion via Exhaustive Search (AEES)** — an enumerative
-   algorithm that replaces gradient descent for the snap-selection
-   problem. Full AEES enumerates the complete snap space up to
-   depth 3 (186 624 configurations, 76 s); **unbranched AEES**
-   restricts to single-path targets and enumerates `4^d`
-   configurations, which scales to depth 8 in under 2 minutes. Both
-   variants recover the ``e − exp^{d−2}(x)`` landscape target at
-   R² = 1 where random-init gradient descent yields 0%. This closes
-   the depth wall for every nested-function-chain target.
-4. **Rigorous theoretical analysis** of ψ as a candidate smooth
-   Sheffer. A finite-order-of-vanishing theorem (Theorem 4 in
+   alternative to gradient descent for the snap-selection problem.
+   Full AEES enumerates the complete snap space up to depth 3
+   (186 624 configurations, 76 s); **unbranched AEES** restricts to
+   single-path nested-chain snaps and enumerates `4^d`
+   configurations, scaling to depth 8 in under 2 minutes on
+   iterated-function targets. Both are tautologically complete
+   *within their enumerated subclass* — they recover the
+   ``e − exp^{d−2}(x)`` landscape target at R² = 1 because the target
+   snap lies in the enumerated set. General branched recovery at
+   depth ≥ 4 remains open.
+4. **Theoretical analysis of ψ as a candidate smooth Sheffer.** A
+   finite-order-of-vanishing theorem with explicit sharp bound
+   `ord(f) ≤ 3^k` (Theorem 4 in
    [docs/sheffer_analysis.md](docs/sheffer_analysis.md)) closes the
-   terminal-free case negatively; the terminal-{1} case is reduced
+   terminal-free case negatively. The terminal-{1} case is reduced
    to a concrete transcendence subproblem (Subproblems A and B in
-   §4.2).
+   §4.2). A full-enumeration numerical check at 150-digit precision
+   confirms that no ψ-expression of depth ≤ 5 over `{1}` reaches 0
+   (minimum observed `|value|` at depth 5 is 4.34×10⁻⁶³, achieved
+   exactly by the `T_self` tower of Proposition 6). This is
+   empirical evidence for Conjecture 7, not a proof.
 5. **Stability machinery** — adaptive multi-start with warm-start
    rotation, a NaN-abort guard, and an optional extrapolation penalty —
    that eliminates the previously-reported divergence on bivariate
@@ -196,19 +203,32 @@ Head-to-head on the landscape target:
 | 8     | 0/20           | —                | ∞                | ✓ (R²=1.0, 100s) |
 
 Gradient descent collapses at depth 3 and is stuck at 0% through
-depth 8. Unbranched AEES **fully recovers the target at every depth
-through 8** in under 2 minutes. On random unbranched targets from the
-same grammar, unbranched AEES recovers 85–90% at depths 4–6 (N=20
-per cell); the non-recoveries are numerical-degeneracy cases where
-the target's `y`-variance is below float precision.
+depth 8. Unbranched AEES recovers the target at every depth through
+8 in under 2 minutes — **tautologically**, because the landscape
+target is itself an unbranched nested chain and therefore sits in
+the enumerated subclass. On random targets also sampled from the
+unbranched grammar, unbranched AEES recovers 85–90% at depths 4–6
+(N=20 per cell); the non-recoveries are numerical-degeneracy cases
+where the target's `y`-variance is below float precision.
 
-**This is the main algorithmic contribution.** The depth wall that
-Odrzywołek (2026) flagged as an open problem is removed for all
-single-path symbolic targets — i.e. every nested function chain of
-the form ``f_k(f_{k-1}(...f_0(x)...))``. Double-path and general
-branching targets are reduced to a `(d-1)^2` product of unbranched
-solutions and scale cleanly up to depth 5; beyond that, beam search
-or neural guidance is the natural continuation.
+**Scope of the claim.** Unbranched AEES is exhaustive over a
+**structurally restricted subclass** — snaps with exactly one active
+path from root to leaf. Inside that subclass, depth 1–8 recovery is
+complete by construction: the target, being itself a nested function
+chain, lies in the enumerated set, so OLS fitting always reaches
+R² = 1. This is therefore **not** a general resolution of
+Odrzywołek's scaling-wall problem; branched targets (depth ≥ 4 with
+both root slots using the `f_child` option) remain combinatorially
+infeasible for the exhaustive variant, and general gradient-based
+recovery at depth ≥ 4 remains an open problem.
+
+What this contribution does settle: **for the practically dominant
+class of iterated-function symbolic targets** — exponential decays,
+Arrhenius laws, nested log growth, Planck-like chains — depth-wall
+recovery is reduced to a sub-second enumeration. Branched
+double-path AEES at depth ≤ 5 is a natural extension that would
+require ~10⁴ more configurations; branched beam search for depth ≥ 6
+is the natural continuation.
 
 Reproduce:
 

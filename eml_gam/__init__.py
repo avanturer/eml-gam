@@ -4,6 +4,7 @@ from .atlas_expansion import (
     AtlasCandidate,
     aees_recover,
     aees_search,
+    aees_search_double_branched_univariate,
     aees_search_unbranched,
     enumerate_unbranched_snaps_univariate,
 )
@@ -44,6 +45,7 @@ __all__ = [
     "aees_search",
     "aees_recover",
     "aees_search_unbranched",
+    "aees_search_double_branched_univariate",
     "enumerate_unbranched_snaps_univariate",
     "format_formula",
     "complexity",

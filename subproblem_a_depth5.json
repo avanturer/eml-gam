@@ -1,0 +1,29 @@
+{
+  "max_depth": 5,
+  "precision_digits": 150,
+  "n_pairs_at_depth_5": 3261636,
+  "top_k": 5,
+  "top": [
+    {
+      "abs_value_float": 4.341673308261595e-63,
+      "tree_repr": "psi(psi(psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))),psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1)))),psi(psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1"
+    },
+    {
+      "abs_value_float": 2.3528421881207564e-21,
+      "tree_repr": "psi(psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))),psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))))"
+    },
+    {
+      "abs_value_float": 2.3528421881207564e-21,
+      "tree_repr": "psi(psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))),psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))))"
+    },
+    {
+      "abs_value_float": 2.3528421881207564e-21,
+      "tree_repr": "psi(psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))),psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))))"
+    },
+    {
+      "abs_value_float": 2.3528421881207564e-21,
+      "tree_repr": "psi(psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))),psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))))"
+    }
+  ],
+  "elapsed_s": 118.99240278899924
+}

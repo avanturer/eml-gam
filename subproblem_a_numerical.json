@@ -1,0 +1,18 @@
+{
+  "max_depth": 4,
+  "precision_digits": 150,
+  "n_trees": 1806,
+  "min_abs_value": "2.3528421881207564446e-21",
+  "best_tree_repr": "psi(psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))),psi(psi(psi(1,1),psi(1,1)),psi(psi(1,1),psi(1,1))))",
+  "best_tree_depth": 4,
+  "t_self_at_max_depth": "2.3528421881207564446e-21",
+  "is_numerically_zero_at_10_to_minus_100": false,
+  "elapsed_s": 0.06322567900133436,
+  "t_self_orbit": [
+    "1.0",
+    "0.293827606624258",
+    "0.0083178416731124",
+    "1.91824769270808e-7",
+    "2.35284218812076e-21"
+  ]
+}
