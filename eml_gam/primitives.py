@@ -305,16 +305,21 @@ def warm_start_tree(
     x: torch.Tensor,
     y: torch.Tensor,
     try_signs: bool = True,
+    try_offsets: bool = True,
     simplicity_tol: float = 0.10,
     use_holdout: bool = True,
 ) -> PrimitiveConfig:
     """Install the best atlas entry into the given tree.
 
-    Every combination of ``(sign_vector, primitive)`` is scored with
-    ``score_primitive``. An adaptive tolerance is used: the tolerance is
-    narrow when a clear winner exists (R² close to 1), and wide when
-    several candidates fit the data similarly. Within the acceptance band
-    the entry with the smallest atlas index (the simplest form) wins.
+    Every combination of ``(sign_vector, offset_vector, primitive)`` is
+    scored with ``score_primitive``.  The offset search tries shifting each
+    input by a few data-driven values (0, median, various percentiles).
+    This is critical for rational-function targets like Michaelis–Menten
+    ``v = Vmax * S / (Km + S)``: the primitive ``e^e / x`` evaluated at
+    ``x + Km`` gives a near-exact fit, but at ``x`` alone it does not.
+
+    An adaptive tolerance prefers simpler atlas entries when several
+    candidates score within a small margin.
     """
     candidates = [
         c for c in atlas if c.depth == tree.depth and c.n_inputs == tree.n_inputs
@@ -331,25 +336,78 @@ def warm_start_tree(
     else:
         sign_combos = [[1.0, 1.0], [-1.0, 1.0], [1.0, -1.0], [-1.0, -1.0]]
 
-    all_ranked: list[tuple[float, int, list[float], PrimitiveConfig]] = []
+    # Build offset candidates per input dimension.
+    if try_offsets and tree.use_input_affine:
+        x_np = x.detach().cpu().numpy()
+        offset_candidates: list[list[float]] = []
+        for dim in range(tree.n_inputs):
+            col = x_np[:, dim] if x_np.ndim == 2 else x_np
+            med = float(np.median(col))
+            p25 = float(np.percentile(col, 25))
+            p75 = float(np.percentile(col, 75))
+            offset_candidates.append(
+                sorted(set([0.0, med, -med, p25, -p25, p75, -p75]))
+            )
+        if tree.n_inputs == 1:
+            offset_combos = [[o] for o in offset_candidates[0]]
+        else:
+            # For bivariate: only try offsets on one dim at a time
+            offset_combos = [[0.0, 0.0]]
+            for o in offset_candidates[0]:
+                if o != 0.0:
+                    offset_combos.append([o, 0.0])
+            for o in offset_candidates[1]:
+                if o != 0.0:
+                    offset_combos.append([0.0, o])
+    else:
+        offset_combos = [[0.0] * tree.n_inputs]
+
+    # Score all (sign, offset, primitive) combinations.
+    Candidate = tuple[float, int, list[float], list[float], PrimitiveConfig]
+    all_ranked: list[Candidate] = []
     for signs in sign_combos:
         sign_t = torch.tensor(signs, dtype=x.dtype, device=x.device)
-        x_scaled = x * sign_t
-        for idx, cfg in enumerate(candidates):
-            r2, _, _ = score_primitive(cfg, x_scaled, y, use_holdout=use_holdout)
-            all_ranked.append((r2, idx, signs, cfg))
+        for offsets in offset_combos:
+            off_t = torch.tensor(offsets, dtype=x.dtype, device=x.device)
+            x_shifted = x * sign_t + off_t
+            for idx, cfg in enumerate(candidates):
+                r2, _, _ = score_primitive(
+                    cfg, x_shifted, y, use_holdout=use_holdout
+                )
+                all_ranked.append((r2, idx, signs, offsets, cfg))
 
-    best_r2 = max(c[0] for c in all_ranked)
-    adaptive_tol = max(0.05, min(simplicity_tol, (1.0 - best_r2) * 0.5))
-    acceptable = [c for c in all_ranked if c[0] >= best_r2 - adaptive_tol]
-    chosen = min(acceptable, key=lambda c: (c[1], -c[0]))
-    _, _, best_signs, best_cfg = chosen
+    # Step 1: find best among zero-offset candidates (original logic).
+    zero_only = [c for c in all_ranked if all(abs(o) < 1e-8 for o in c[3])]
+    best_zero_r2 = max(c[0] for c in zero_only) if zero_only else -np.inf
+    zero_tol = max(0.05, min(simplicity_tol, (1.0 - best_zero_r2) * 0.5))
+    zero_acceptable = [c for c in zero_only if c[0] >= best_zero_r2 - zero_tol]
+    best_zero = min(zero_acceptable, key=lambda c: (c[1], -c[0]))
+
+    # Step 2: check if any offset candidate beats the zero-winner.
+    # Only consider offset for rational-form primitives (e^e/x family).
+    # Log-based primitives with offset inflate holdout R² but extrapolate
+    # poorly (log grows unboundedly, misleading the holdout scorer).
+    _offset_ok = {"exp_of_eminuslogx"}
+    offset_only = [
+        c for c in all_ranked
+        if any(abs(o) > 1e-8 for o in c[3]) and c[4].name in _offset_ok
+    ]
+    offset_winner = max(offset_only, key=lambda c: c[0]) if offset_only else None
+
+    if offset_winner is not None and offset_winner[0] > best_zero[0] + 0.03:
+        chosen = offset_winner
+    else:
+        chosen = best_zero
+    _, _, best_signs, best_offsets, best_cfg = chosen
 
     tree.set_snap_config(best_cfg.snap_choices)
     with torch.no_grad():
         tree.input_scale.data.copy_(
             torch.tensor(best_signs, dtype=DTYPE, device=tree.input_scale.device)
         )
-        tree.input_offset.data.zero_()
+        if tree.use_input_affine:
+            tree.input_offset.data.copy_(
+                torch.tensor(best_offsets, dtype=DTYPE, device=tree.input_offset.device)
+            )
     tree.unsnap()
     return best_cfg

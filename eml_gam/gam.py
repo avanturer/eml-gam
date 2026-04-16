@@ -20,6 +20,7 @@ stage; it can be disabled via ``warm_start=False``.
 
 from __future__ import annotations
 
+import copy
 import math
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Tuple
@@ -206,10 +207,29 @@ class EMLGAM(nn.Module):
         verbose: bool = False,
         warm_start: bool = True,
         use_holdout: bool = True,
+        try_offsets: bool = False,
+        n_restarts: int = 1,
         atlas_univariate: Optional[list] = None,
         atlas_bivariate: Optional[list] = None,
     ) -> "EMLGAM":
-        """Run the three-stage training schedule on ``(X, y)``."""
+        """Run the three-stage training schedule on ``(X, y)``.
+
+        Parameters
+        ----------
+        n_restarts : int
+            If > 1, run the full warm-start + training pipeline this many
+            times with different random seeds and keep the result with the
+            lowest training MSE. Addresses seed-dependent convergence.
+        """
+        if n_restarts > 1:
+            return self._fit_multistart(
+                X, y, cfg=cfg, interaction_pairs=interaction_pairs,
+                verbose=verbose, warm_start=warm_start,
+                use_holdout=use_holdout, try_offsets=try_offsets,
+                n_restarts=n_restarts,
+                atlas_univariate=atlas_univariate,
+                atlas_bivariate=atlas_bivariate,
+            )
         cfg = cfg or TrainConfig()
         x = to_tensor(X)
         y_t = to_tensor(y).reshape(-1)
@@ -244,6 +264,7 @@ class EMLGAM(nn.Module):
             self._warm_start_trees(
                 x, y_work, atlas_univariate, atlas_bivariate,
                 verbose=verbose, use_holdout=use_holdout,
+                try_offsets=try_offsets,
             )
 
         optim = torch.optim.Adam(self.parameters(), lr=cfg.lr)
@@ -318,6 +339,7 @@ class EMLGAM(nn.Module):
         atlas_bivariate,
         verbose: bool = False,
         use_holdout: bool = True,
+        try_offsets: bool = False,
     ) -> None:
         """Install warm-start snap configurations by fitting a primitive per
         component against the current residual."""
@@ -336,7 +358,7 @@ class EMLGAM(nn.Module):
             for i, tree in enumerate(self.univariate_trees):
                 best = warm_start_tree(
                     tree, atlas_uni, x_z[:, i : i + 1], residual,
-                    use_holdout=use_holdout,
+                    use_holdout=use_holdout, try_offsets=try_offsets,
                 )
                 with torch.no_grad():
                     values = tree(x_z[:, i : i + 1])
@@ -367,7 +389,7 @@ class EMLGAM(nn.Module):
                 tree = self.bivariate_trees[key]
                 best = warm_start_tree(
                     tree, atlas_bi, x_z[:, [i, j]], residual,
-                    use_holdout=use_holdout,
+                    use_holdout=use_holdout, try_offsets=try_offsets,
                 )
                 with torch.no_grad():
                     values = tree(x_z[:, [i, j]])
@@ -390,6 +412,44 @@ class EMLGAM(nn.Module):
 
         with torch.no_grad():
             self.bias.add_(residual.mean())
+
+    def _fit_multistart(self, X, y, *, n_restarts, **kwargs) -> "EMLGAM":
+        """Run fit() multiple times and keep the best result."""
+        best_state = None
+        best_mse = float("inf")
+        verbose = kwargs.get("verbose", False)
+        x_t = to_tensor(X)
+        y_t = to_tensor(y).reshape(-1)
+        for i in range(n_restarts):
+            # Reset all tree parameters for a fresh start
+            for tree in self._all_trees():
+                tree.reset_parameters()
+            self.bias.data.zero_()
+            if self.use_univariate:
+                self.univariate_weights.data.fill_(1.0)
+            for w in self.bivariate_weights:
+                w.data.fill_(1.0)
+            self._fitted = False
+
+            # Fit with single restart
+            kwargs_single = dict(kwargs)
+            kwargs_single["n_restarts"] = 1
+            self.fit(X, y, **kwargs_single)
+
+            with torch.no_grad():
+                pred = self(x_t)
+                y_work = (y_t - self.y_mean) / self.y_std if self.standardize else y_t
+                mse = torch.mean((pred - y_work) ** 2).item()
+            if verbose:
+                print(f"  [restart {i + 1}/{n_restarts}] train_mse={mse:.3e}")
+            if mse < best_mse:
+                best_mse = mse
+                best_state = copy.deepcopy(self.state_dict())
+        if best_state is not None:
+            self.load_state_dict(best_state)
+        self.snap_all()
+        self._fitted = True
+        return self
 
     @torch.no_grad()
     def predict(self, X, clip_factor: float = 0.0) -> np.ndarray:

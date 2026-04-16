@@ -139,7 +139,7 @@ def _fit_emlgam(
         scale_normalize=scale_normalize,
     )
     cfg = TrainConfig(n_epochs=n_epochs, lr=5e-2, entropy_weight=1e-3)
-    model.fit(X_tr, y_tr, cfg=cfg, warm_start=True, verbose=False)
+    model.fit(X_tr, y_tr, cfg=cfg, warm_start=True, try_offsets=True, verbose=False)
     return model
 
 
