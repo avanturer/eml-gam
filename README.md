@@ -86,9 +86,26 @@ Five genuinely distinct variants (`benchmarks/ablation.py`):
 
 Warm-start is the biggest contributor. Affine lets the model absorb multiplicative constants. Scale normalization is needed for features with extreme magnitudes (Arrhenius 1/T ~ 0.002). Holdout fine-tunes the symbolic form by scoring on distribution tails.
 
-### Error bars
+### Error bars (N=3 seeds)
 
-All results can be re-run with multiple seeds via `benchmarks/multiseed.py`. This shows robustness to random initialisation and noise draws.
+Multi-seed results for EML-GA²M on synthetic extrapolation (mean +/- std):
+
+| Target | R² extrap |
+|--------|----------:|
+| Exp. decay | +0.45 +/- 0.76 |
+| Arrhenius | +0.53 +/- 0.03 |
+| Michaelis-Menten | +0.00 +/- 0.21 |
+| Cobb-Douglas | +0.83 +/- 0.11 |
+| Logistic growth | +0.77 +/- 0.00 |
+| Power law | +0.88 +/- 0.01 |
+| Comp. inhibition | unstable (1/3 seeds exploded) |
+| Combined gas law | +0.29 +/- 0.51 |
+
+**Yacht extrap: +0.66 +/- 0.00** (deterministic warm-start on fixed data).
+
+The high variance on exp_decay and combined_gas_law reflects seed-dependent convergence — warm-start sometimes picks a suboptimal primitive. Competitive inhibition occasionally explodes when the bivariate tree fits an exponential that diverges outside the training range. This is a known limitation; more seeds or multi-start would reduce it.
+
+Reproduce: `python -m eml_gam.benchmarks.multiseed`
 
 ## Installation
 
