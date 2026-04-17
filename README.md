@@ -315,6 +315,41 @@ Recovered formula: `0.005 · exp(13.47 · Fr) - 0.30`. The exponential
 fits the steep rise of resistance with Froude number (consistent with
 the Michell integral / power-law physics).
 
+### 9-dataset real-UCI extrapolation sweep
+
+Extended the real-UCI story to **nine datasets** with physical
+extrapolation splits. All baselines (linear, EBM, XGBoost) and EML-GA²M
+are evaluated on the same train/test split. Extrapolation R² reported
+(higher is better). Full data in `uci_wins_summary.json`.
+
+| Dataset | Split feature | Linear | EBM | XGBoost | **EML-GA²M** | Winner |
+|---|---|---:|---:|---:|---:|---|
+| yacht | Froude number | -0.82 | -1.07 | -1.07 | **+0.67** | **EML-GA²M** |
+| concrete | age > 28 | -45.0 | +0.49 | +0.52 | +0.17 | XGBoost |
+| superconductivity | atomic_mass q60 | +0.30 | +0.38 | +0.59 | -222 | XGBoost |
+| auto_mpg | weight q60 | -2.43 | +0.42 | -0.36 | -6419 | EBM |
+| energy_efficiency | glazing_area > 0.25 | -0.13 | +0.83 | +0.83 | -84 | EBM/XGB |
+| abalone | whole_weight > 0.93 | +0.14 | -0.07 | -0.07 | -5303 | Linear |
+| ccpp | ambient T q50 | +0.27 | -1.68 | -2.30 | -1622 | Linear |
+| airfoil | frequency > 2000 | +0.27 | -0.06 | -0.02 | -8245 | Linear |
+| forest_fires | temp > 22.8 | -0.22 | -0.06 | -0.86 | -3771 | EBM |
+
+**1 EML-GA²M win out of 9 real-UCI datasets.** The niche is genuine
+but narrow: EML-GA²M wins decisively on Yacht where the target
+actually *is* an `exp`-composition of the extrapolation feature. On
+the other 8 — mixed functional structure, multiple features of
+comparable importance, noisy targets — the unconstrained exp/log
+composition blows up outside the training range and loses
+catastrophically to tree-based methods. The extrap-penalty guard
+(`extrap_penalty_weight=0.05`) prevents NaN but does not prevent
+wrong-direction extrapolation when the structural prior does not
+match the data.
+
+The honest read: EML-GA²M is a **niche tool**, valuable when the
+user has prior knowledge that the target is a single exp/log/power-law
+in the extrapolation feature, and risky otherwise. It is not a
+general-purpose tabular regressor.
+
 ### Scalability (20 features, synthetic target)
 
 `y = 3·log(x₁) + 2·exp(x₂) − 4·x₃ + 5·(x₄/x₅) + noise`, with 15
