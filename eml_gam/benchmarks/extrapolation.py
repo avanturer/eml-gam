@@ -139,7 +139,11 @@ def _fit_emlgam(
         scale_normalize=scale_normalize,
     )
     cfg = TrainConfig(n_epochs=n_epochs, lr=5e-2, entropy_weight=1e-3)
-    model.fit(X_tr, y_tr, cfg=cfg, warm_start=True, try_offsets=True, verbose=False)
+    # try_offsets=True lets the input affine learn a non-zero offset, which
+    # on targets like exp_decay / competitive_inhibition drives the argument
+    # of a log inside the tree through zero and produces rational snaps that
+    # diverge outside the training range. Keep it off by default.
+    model.fit(X_tr, y_tr, cfg=cfg, warm_start=True, try_offsets=False, verbose=False)
     return model
 
 
