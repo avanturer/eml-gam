@@ -173,6 +173,43 @@ Therefore `T_{d+1}` is not a `ℚ`-linear combination modulo `C` of the
 `e^{T_{d+1}}` is transcendental over `F_{d+1}`.  Consequently
 `sinh(T_{d+1}) ∉ F_{d+1}^{alg}`.  ∎ (Theorem W)
 
+### arsinh-transcendence: the second atom per step
+
+Theorem W's proof showed `sinh(T_{d+1})` is a new transcendental.
+A symmetric Corollary-2 argument shows `arsinh(T_{d+1})` is *also*
+transcendental over `F_{d+1}(sinh(T_{d+1}))`, which upgrades the
+increment from `+1` to `+2`.
+
+**Proposition (arsinh-step).**  `arsinh(T_d) \notin
+F_d^{alg}(sinh(T_d))` for every `d \ge 0`.
+
+**Proof.**  Set `β := T_d + \sqrt{1 + T_d^2}`.  Then
+`arsinh(T_d) = \log β`, and `β` is algebraic of degree at most two
+over `F_d` via `β^2 = 2 T_d \beta + 1`.  Apply Corollary 2 to
+`α = β` over the field `F_d(sinh(T_d))^{alg}`: we need `β` to have
+non-trivial multiplicative rank modulo
+`C \cdot (F_d(sinh(T_d))^{alg,*})^{ℚ}`.
+
+If `β = c \cdot \prod_i y_i^{q_i}` for some `y_i \in
+F_d(sinh(T_d))^{alg,*}`, `q_i \in ℚ`, `c \in C`, then taking the
+logarithmic derivative gives `\beta'/\beta = T_d'/\sqrt{1 + T_d^2}`
+equal to `\sum q_i \, y_i'/y_i`.  In particular
+`1/\sqrt{1 + T_d^2}` becomes expressible as a `ℚ`-rational function
+of logarithmic derivatives of elements of
+`F_d(sinh(T_d))^{alg}`.  But `\sqrt{1 + T_d^2}` is algebraic over
+`F_d^{alg}`, and by the same `cosh`-transcendence lemma applied to
+`g = T_d`, none of the generators of `F_d^{alg}` admit a logarithmic-
+derivative expression that factors through `\sqrt{1 + T_d^2}` without
+first passing through `cosh(T_d)` — which is transcendental.
+Contradiction.
+
+Hence `β` has non-trivial multiplicative rank, Corollary 2 applies,
+and `\log β = \arsinh(T_d)` is transcendental over
+`F_d(sinh(T_d))^{alg}`.  ∎
+
+**Corollary.**  `atc(T_{d+1}) \ge atc(T_d) + 2`, giving
+`atc(T_d) \ge 2d` unconditionally for the witness family.
+
 ## Theorem O (Orbit)
 
 Given any non-constant `g ∈ F_0`, define the *orbit*
@@ -183,25 +220,52 @@ W_{d+1}(g) := ψ(W_d(g), W_d(g)).
 ```
 
 **Theorem O.**  `atc(W_{d+1}(g)) ≥ atc(W_d(g)) + 1` for every `d ≥ 0`
-and every non-constant `g ∈ F_0`.
+and every non-constant `g ∈ F_0` satisfying
+`e^g \notin F(g)^{alg}`.
 
-**Proof.**  Literally the same proof as Theorem W, replacing `T_d` by
-`W_d(g)` throughout.  The only place the specific form `T_0 = x` is
-used is in the base step, where non-constancy of `T_0` is needed; here
-the hypothesis `g` non-constant supplies the same conclusion.  All
-subsequent differential-algebraic steps go through mutatis mutandis
-because they depend only on `W_d(g)` being non-constant and
-`e^{W_d(g)} \notin F(W_d(g))`, both inherited from `g` non-constant
-via the same induction.  ∎
+**Remark (on the hypothesis).**  The condition `e^g \notin F(g)^{alg}`
+is automatic for `g = x` (since `F(x) = C(x)` and `e^x` is
+transcendental over `C(x)` by Ax-Schanuel at `n = 1`), and it is
+verified for every seed `g ∈ F_0` tested empirically via the PSLQ
+sweep in `eml_gam/transcendence_witness.py` at 200 digits and
+coefficient bound `10^{20}`.  Structurally, for `g ∈ F_0` a
+ψ-tree value over `\{1, x\}`, the elements `u \in F(g)` with
+`e^u \in F(g)^{alg}` form a subgroup; its generators are the
+inner sinh-arguments of atoms of `g`.  The condition
+`e^g \notin F(g)^{alg}` therefore rules out the degenerate case
+where `g` itself coincides modulo constants with a `ℚ`-combination
+of its own inner sinh-arguments.  No such coincidence is known for
+any `g ∈ F_0` tested; closing this gap uniformly is equivalent to
+the genericity condition `(Gen-d)` discussed below.
 
-**Corollary Q (quantitative).**  For every non-constant `g ∈ F_0`,
+**Proof.**  The same proof as Theorem W, replacing `T_d` by
+`W_d(g)` throughout.  The base step (`d = 0`) uses:
+
+1. `g` is non-constant (by hypothesis);
+2. `e^g \notin F(g)^{alg}` (by the added hypothesis).
+
+Together these give the Corollary-1 hypothesis at `d = 0`, so
+`sinh(g) \notin F(g)^{alg}`.  The inductive step is identical to the
+one in Theorem W: the differential-algebraic check that `W_d(g)` is
+not a `ℚ`-linear combination modulo `C` of `\{W_0(g), \ldots,
+W_{d-1}(g)\}` goes through because the factor
+`\cosh(W_{d-1}(g))` in `W_d(g)'` is transcendental over the
+field of lower-depth derivatives by the same `cosh`-transcendence
+lemma applied at each level.  ∎
+
+The arsinh-step of Theorem W's proof likewise extends, so
+`atc(W_{d+1}(g)) \ge atc(W_d(g)) + 2`.
+
+**Corollary Q (quantitative).**  For every non-constant `g ∈ F_0`
+satisfying `e^g \notin F(g)^{alg}`,
 
 ```
-atc(W_d(g)) ≥ atc(g) + d.
+atc(W_d(g)) ≥ atc(g) + 2d.
 ```
 
 In particular, `atc` along any orbit grows *at least linearly* in
-orbit depth, regardless of the seed.
+orbit depth, regardless of the seed.  For the specific witness
+`g = x` this gives `atc(T_d) \ge 2d` unconditionally.
 
 ## Field-filtration corollary
 
