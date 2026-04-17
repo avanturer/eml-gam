@@ -1,0 +1,112 @@
+{
+  "n_wins": 1,
+  "n_total": 9,
+  "datasets": [
+    {
+      "dataset": "abalone",
+      "linear": 0.13744163513183594,
+      "ebm": -0.07032876697944301,
+      "xgboost": -0.07335770130157471,
+      "emlgam_tuned": -5302.831695683598,
+      "emlgam_legacy": null,
+      "best_baseline": 0.13744163513183594,
+      "emlgam_best": -5302.831695683598,
+      "win": false
+    },
+    {
+      "dataset": "airfoil",
+      "linear": -0.632183511134867,
+      "ebm": -0.057114590629318895,
+      "xgboost": -0.021861436137797785,
+      "gplearn": -0.925193590720351,
+      "emlgam_tuned": -8245.408427717995,
+      "emlgam_legacy": -1.8791353436760074,
+      "best_baseline": -0.021861436137797785,
+      "emlgam_best": -8245.408427717995,
+      "win": false
+    },
+    {
+      "dataset": "auto_mpg",
+      "linear": -2.4251031617013274,
+      "ebm": 0.4157805566264372,
+      "xgboost": -0.36289775552641546,
+      "gplearn": -0.9183733010225956,
+      "emlgam_tuned": -6418.856119935705,
+      "emlgam_legacy": -56.42605260910385,
+      "best_baseline": 0.4157805566264372,
+      "emlgam_best": -6418.856119935705,
+      "win": false
+    },
+    {
+      "dataset": "ccpp",
+      "linear": 0.2654830813407898,
+      "ebm": -1.684866224080198,
+      "xgboost": -2.2963054180145264,
+      "emlgam_tuned": -1622.4138143471641,
+      "emlgam_legacy": null,
+      "best_baseline": 0.2654830813407898,
+      "emlgam_best": -1622.4138143471641,
+      "win": false
+    },
+    {
+      "dataset": "concrete",
+      "linear": -44.968633180909045,
+      "ebm": 0.48823079152963833,
+      "xgboost": 0.5239700047380057,
+      "gplearn": -6.468449623638373,
+      "emlgam_tuned": 0.1740930508626628,
+      "emlgam_legacy": -5892875.960742727,
+      "best_baseline": 0.5239700047380057,
+      "emlgam_best": 0.1740930508626628,
+      "win": false
+    },
+    {
+      "dataset": "energy_eff",
+      "linear": -0.133201003074646,
+      "ebm": 0.830415549120587,
+      "xgboost": 0.8309078216552734,
+      "emlgam_tuned": -84.01145863319879,
+      "emlgam_legacy": null,
+      "best_baseline": 0.8309078216552734,
+      "emlgam_best": -84.01145863319879,
+      "win": false
+    },
+    {
+      "dataset": "forest_fires",
+      "linear": -0.22424376010894775,
+      "ebm": -0.05588390205622895,
+      "xgboost": -0.8577848672866821,
+      "emlgam_tuned": -3770.788108020168,
+      "emlgam_legacy": null,
+      "best_baseline": -0.05588390205622895,
+      "emlgam_best": -3770.788108020168,
+      "win": false
+    },
+    {
+      "dataset": "superconductivity",
+      "linear": 0.3016698956489563,
+      "ebm": 0.37708766470431687,
+      "xgboost": 0.5866271257400513,
+      "emlgam_tuned": -221.617468323675,
+      "emlgam_legacy": null,
+      "best_baseline": 0.5866271257400513,
+      "emlgam_best": -221.617468323675,
+      "win": false
+    },
+    {
+      "dataset": "yacht",
+      "linear": -0.8235527939924427,
+      "ebm": -1.0722486310471075,
+      "xgboost": -1.0662244298846795,
+      "gplearn": -4.585885838304195,
+      "emlgam_tuned": 0.6720955704279936,
+      "emlgam_legacy": 0.6567599360782068,
+      "best_baseline": -0.8235527939924427,
+      "emlgam_best": 0.6720955704279936,
+      "win": true
+    }
+  ],
+  "wins_list": [
+    "yacht"
+  ]
+}

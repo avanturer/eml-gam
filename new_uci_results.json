@@ -1,0 +1,104 @@
+{
+  "ccpp": [
+    {
+      "dataset": "ccpp",
+      "model": "linear",
+      "r2_extrap": 0.2654830813407898,
+      "mse_extrap": 39.42366027832031,
+      "time_s": 0.0018794659990817308,
+      "formula": ""
+    },
+    {
+      "dataset": "ccpp",
+      "model": "ebm",
+      "r2_extrap": -1.684866224080198,
+      "mse_extrap": 144.10458381108393,
+      "time_s": 13.227219461998175,
+      "formula": ""
+    },
+    {
+      "dataset": "ccpp",
+      "model": "xgboost",
+      "r2_extrap": -2.2963054180145264,
+      "mse_extrap": 176.9222869873047,
+      "time_s": 1.2830925999987812,
+      "formula": ""
+    },
+    {
+      "dataset": "ccpp",
+      "model": "emlgam_tuned",
+      "r2_extrap": -1622.4138143471641,
+      "mse_extrap": 87133.3439154153,
+      "time_s": 20.907633742001053,
+      "formula": "73.1709319443423*exp(0.806890995081808*AT) - 0.862904370458345*exp(0.0482311123147563*RH) - 58.2388553041369*log(1.23208335017079*AP + 0.210873392763098) + 1.18566563395608*log(0.0548481918508945*RH - 0.23725163105409) + 2.2591957520251*log(0.0752880738717347*RH + 0.0928031954571339) - 0.695468805214551*log(0.652841739694171*V - 0.372616968276225) + 54.4078770212765*log(0.769131960076185*V + 0.168"
+    }
+  ],
+  "energy_eff": [
+    {
+      "dataset": "energy_eff",
+      "model": "linear",
+      "r2_extrap": -0.133201003074646,
+      "mse_extrap": 118.45720672607422,
+      "time_s": 0.001905884000734659,
+      "formula": ""
+    },
+    {
+      "dataset": "energy_eff",
+      "model": "ebm",
+      "r2_extrap": 0.830415549120587,
+      "mse_extrap": 17.727216420861737,
+      "time_s": 1.027594561001024,
+      "formula": ""
+    },
+    {
+      "dataset": "energy_eff",
+      "model": "xgboost",
+      "r2_extrap": 0.8309078216552734,
+      "mse_extrap": 17.675756454467773,
+      "time_s": 0.12342372200146201,
+      "formula": ""
+    },
+    {
+      "dataset": "energy_eff",
+      "model": "emlgam_tuned",
+      "r2_extrap": -84.01145863319879,
+      "mse_extrap": 8886.525372042803,
+      "time_s": 20.294197250997968,
+      "formula": "0.105699832649837*exp(0.0162875816543596*X4_roof_area) + 0.0377176529244273*exp(0.810769757437392*X5_overall_height) + 0.337994709215074*exp(0.774967284267872*X6_orientation) - 2.56415183228229*exp(0.762283629031783*exp(-12.4679698233298*X7_glazing_area)) - 1.97141174799089*log(0.00881277054960137*X2_surface_area - 0.239951425876141) - 6.96217038547266*log(0.0178902483271016*X3_wall_area - 0.23036"
+    }
+  ],
+  "superconductivity": [
+    {
+      "dataset": "superconductivity",
+      "model": "linear",
+      "r2_extrap": 0.3016698956489563,
+      "mse_extrap": 925.5509643554688,
+      "time_s": 0.0024551610003982205,
+      "formula": ""
+    },
+    {
+      "dataset": "superconductivity",
+      "model": "ebm",
+      "r2_extrap": 0.37708766470431687,
+      "mse_extrap": 825.5939389716935,
+      "time_s": 46.10629388000234,
+      "formula": ""
+    },
+    {
+      "dataset": "superconductivity",
+      "model": "xgboost",
+      "r2_extrap": 0.5866271257400513,
+      "mse_extrap": 547.8751220703125,
+      "time_s": 1.0832499169991934,
+      "formula": ""
+    },
+    {
+      "dataset": "superconductivity",
+      "model": "emlgam_tuned",
+      "r2_extrap": -221.617468323675,
+      "mse_extrap": 295052.1640737892,
+      "time_s": 41.719284435999725,
+      "formula": "0.886925653442407*exp(0.0256133317651674*mean_atomic_mass) - 0.76772283366081*exp(0.0347570104352911*mean_atomic_mass) + 0.399785241277246*exp(0.0438941866138318*mean_atomic_mass) + 0.236198637839925*exp(0.0439607093333056*mean_atomic_mass) + 0.0141822666315933*exp(0.547440521266741*exp(0.00800654890743259*mean_ThermalConductivity)) - 3.63169919160202*log(0.000670016645368289*mean_Density + 0.0493"
+    }
+  ]
+}
