@@ -16,18 +16,23 @@ import json
 import os
 import sys
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from eml_gam.benchmarks.real_world import (  # noqa: E402
-    _load_airfoil, _load_auto_mpg, _load_concrete, _load_yacht,
-)
 from eml_gam.benchmarks.extrapolation import (  # noqa: E402
-    _fit_ebm, _fit_gplearn, _fit_linear, _fit_xgboost, _GPlearnWrapper,
+    _fit_ebm,
+    _fit_linear,
+    _fit_xgboost,
+)
+from eml_gam.benchmarks.real_world import (  # noqa: E402
+    _load_airfoil,
+    _load_auto_mpg,
+    _load_concrete,
+    _load_yacht,
 )
 from eml_gam.gam import EMLGAM  # noqa: E402
 from eml_gam.train import TrainConfig  # noqa: E402

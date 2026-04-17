@@ -25,7 +25,9 @@ from sklearn.metrics import mean_squared_error, r2_score
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from eml_gam.benchmarks.extrapolation import (  # noqa: E402
-    _fit_ebm, _fit_gplearn, _fit_linear, _fit_xgboost, _GPlearnWrapper,
+    _fit_ebm,
+    _fit_linear,
+    _fit_xgboost,
 )
 from eml_gam.gam import EMLGAM  # noqa: E402
 from eml_gam.train import TrainConfig  # noqa: E402

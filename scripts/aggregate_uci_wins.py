@@ -108,7 +108,6 @@ def main():
 
     # Summary
     wins = [r for r in all_rows if r.get("win")]
-    losses = [r for r in all_rows if r.get("win") is False]
     print(f"\n=== EML-GA²M Real-UCI Extrapolation Wins ({len(wins)}/{len(all_rows)}) ===\n")
     print(f"{'dataset':<22s} {'linear':>8} {'ebm':>8} {'xgboost':>8} {'gplearn':>8} {'emlgam':>9}  verdict")
     for r in all_rows:

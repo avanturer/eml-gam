@@ -42,7 +42,6 @@ from typing import List, Tuple
 import mpmath as mp
 import sympy as sp
 
-
 mp.mp.dps = 150
 
 

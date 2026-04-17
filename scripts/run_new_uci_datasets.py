@@ -33,7 +33,9 @@ from sklearn.metrics import mean_squared_error, r2_score
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from eml_gam.benchmarks.extrapolation import (  # noqa: E402
-    _fit_ebm, _fit_gplearn, _fit_linear, _fit_xgboost, _GPlearnWrapper,
+    _fit_ebm,
+    _fit_linear,
+    _fit_xgboost,
 )
 from eml_gam.gam import EMLGAM  # noqa: E402
 from eml_gam.train import TrainConfig  # noqa: E402
@@ -185,7 +187,6 @@ def main():
     print("\n>>> Energy Efficiency")
     try:
         X, y, features = load_energy_eff()
-        glazing_idx = features.index("X7_glazing_area")
         # Split at 0.25 (natural glazing categories: 0, 0.1, 0.25, 0.4)
         res = run_benchmark(
             "energy_eff", X, y, features, "X7_glazing_area", 0.25,
