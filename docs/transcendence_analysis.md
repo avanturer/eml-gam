@@ -1,5 +1,14 @@
 # Transcendence-complexity invariant for ψ-trees
 
+> **Status update (2026-04-17).** The Transcendence Monotonicity
+> Conjecture has been upgraded to a theorem on an explicit witness
+> family. See [transcendence_theorem.md](transcendence_theorem.md) for
+> the proof (based on the Ax-Schanuel theorem, arXiv:2203.00470) and
+> [`eml_gam/transcendence_witness.py`](../eml_gam/transcendence_witness.py)
+> for the numerical verification at 200 digits up to depth 4. This note
+> remains as the historical record of the empirical investigation that
+> motivated the theorem.
+
 ## Motivation
 
 The `(ord, leading)` uniqueness induction proposed as Path 1 to close the

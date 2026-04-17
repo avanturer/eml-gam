@@ -259,6 +259,23 @@ def test_cross_operator_target_data_uses_correct_operator():
         assert not torch.allclose(y_e, y_p, atol=1e-6)
 
 
+def test_transcendence_witness_strict_atc_growth_depth_2():
+    """Witness family T_0=x, T_{d+1}=psi(T_d,T_d) has strictly growing
+    atom count through depth 2. PSLQ at 60 digits should not find a
+    non-trivial relation."""
+    from eml_gam.transcendence_witness import verify_witness
+
+    r0 = verify_witness(depth=0, dps=60, max_coeff=10**6)
+    r1 = verify_witness(depth=1, dps=60, max_coeff=10**6)
+    r2 = verify_witness(depth=2, dps=60, max_coeff=10**6)
+    assert r0.tc == 0 and r1.tc == 2 and r2.tc == 4
+    assert r0.atc_lower_bound == 0
+    assert r1.atc_lower_bound == 2
+    assert r2.atc_lower_bound == 4
+    assert r1.pslq_relation is None
+    assert r2.pslq_relation is None
+
+
 if __name__ == "__main__":
     fns = [v for k, v in dict(globals()).items() if k.startswith("test_")]
     for fn in fns:

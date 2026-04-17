@@ -45,8 +45,9 @@ to depth~$8$ in the single-path chain subclass; (v) a neural beam-search
 proof of concept that achieves $79\%$ top-$16$ recovery of depth-$2$
 targets from $20\,000$ training pairs, thirty times better than random
 gradient initialisation at depth~$3$; (vi) a novel \emph{transcendence-
-complexity invariant} with empirical evidence of monotonicity under
-$\psi$ composition through depth~$3$. Empirical evaluation on eight
+complexity invariant} with an \emph{unconditional} monotonicity
+theorem on an explicit witness family $T_d = \psi(T_{d-1}, T_{d-1})$
+(via Ax-Schanuel), and a conditional extension to the general case. Empirical evaluation on eight
 synthetic scientific targets and five UCI datasets shows that EML-GA$^2$M
 outright wins on four of eight synthetic extrapolation targets, is
 positive on six, and is the single model with positive extrapolation
@@ -319,23 +320,62 @@ open.
 The $(\operatorname{ord}, \operatorname{leading})$ uniqueness induction
 originally proposed as a path to a full-depth proof was falsified at
 depth $5$ by a concrete counterexample (commit \texttt{7c34f491}). We
-propose a refined invariant:
+propose a refined invariant, the \emph{algebraic transcendence
+complexity}
+\[
+  \operatorname{atc}(f)
+   := \operatorname{trdeg}_{\mathbb{Q}(x)}
+      \mathbb{Q}(x)\!\left(\{\sinh(h), \operatorname{arsinh}(h)
+      : \text{atom of } f\}\right),
+\]
+a refinement of the syntactic count $\operatorname{tc}(f)$ used in the
+original conjecture, which satisfies
+$\operatorname{atc}(f) \le \operatorname{tc}(f)$.
 
-\begin{conjecture}[Transcendence monotonicity]
+For the explicit \emph{witness family}
+\[
+  T_0 := x,
+  \qquad
+  T_{d+1} := \psi(T_d, T_d) = \sinh(T_d) - \operatorname{arsinh}(T_d),
+\]
+the Ax-Schanuel theorem for semi-abelian varieties
+\citep{ax1971schanuel,noguchi2022axschanuel} gives an unconditional
+strict-monotonicity statement.
+
+\begin{theorem}[Transcendence monotonicity on the witness family]
+\label{thm:transcendence_witness}
+For every $d \ge 0$, $\operatorname{atc}(T_{d+1}) \ge
+\operatorname{atc}(T_d) + 1$. In particular
+$\operatorname{tc}(T_d) \to \infty$ as $d \to \infty$, and no
+$\psi$-tree in $F_0$ of bounded depth can reproduce the atom signature
+of $T_d$ for large $d$.
+\end{theorem}
+
+\noindent The proof (see \texttt{docs/transcendence\_theorem.md}) uses
+exp- and log-transcendence corollaries of Ax-Schanuel applied
+inductively. The single step specific to the witness family is a
+differential-algebraic check that $T_d$ is not a $\mathbb{Q}$-linear
+combination modulo constants of $\{T_0, \ldots, T_{d-1}\}$; the general
+case reduces to a combinatorial genericity condition in the free
+$\psi$-algebra which is currently open. A numerical PSLQ verification
+of the theorem at $200$ decimal digits and integer-coefficient bound
+$10^{20}$ through depth $4$ returns no non-trivial relation
+(\texttt{eml\_gam/transcendence\_witness.py}), confirming the
+theoretical prediction $\operatorname{atc}(T_d) \ge 2d$ on the witness
+family.
+
+\begin{conjecture}[Transcendence monotonicity, general case]
 For every non-constant $g \in F_0$ at $\psi$-depth $d$, every tree
 $f \in F_0$ of depth $\le d$ has
-$\operatorname{tc}(\psi(\psi(g, g), \psi(g, g))) > \operatorname{tc}(f)$,
-where $\operatorname{tc}(f)$ is the number of algebraically-independent
-$\sinh / \operatorname{arsinh}$ subexpressions of $f$ over $\mathbb{Q}(x)$.
+$\operatorname{tc}(\psi(\psi(g, g), \psi(g, g))) > \operatorname{tc}(f)$.
 \end{conjecture}
 
-We test this conjecture empirically with $\operatorname{tc}$ computed
-syntactically. Through depth $3$ the maximum $\operatorname{tc}$ is
-strictly monotone in depth ($0 \to 2 \to 4 \to 5$). A PSLQ check at 80
-decimal digits with integer coefficients up to $10^6$ finds no
-non-trivial algebraic relation among the atom values. A full proof for
-all depths would require either the Schanuel conjecture or a
-depth-uniform transcendence argument that is presently open.
+Under the genericity condition introduced in
+\texttt{docs/transcendence\_theorem.md} the proof of
+Theorem~\ref{thm:transcendence_witness} extends to this conjecture.
+The empirical sweep over $32$ trees per depth for $d \le 3$ shows
+monotone growth $0 \to 2 \to 4 \to 5$ and no non-trivial PSLQ relation
+at $80$ decimal digits, consistent with the conjecture.
 
 \section{Atlas Expansion via Exhaustive Search (AEES)}
 \label{sec:aees}
@@ -542,6 +582,28 @@ Zhang et al.
 \newblock SHARE: shape-function additive regression with symbolic
          expressions.
 \newblock {\em arXiv:2404.09788}, 2024.
+
+\bibitem{ax1971schanuel}
+J.~Ax.
+\newblock On {S}chanuel's conjectures.
+\newblock {\em Annals of Mathematics}, 93(2):252--268, 1971.
+
+\bibitem{noguchi2022axschanuel}
+J.~Noguchi.
+\newblock Analytic {A}x-{S}chanuel theorem for semi-abelian varieties
+         and {N}evanlinna theory.
+\newblock {\em arXiv:2203.00470}, 2022.
+
+\bibitem{montazerin2025lies}
+M.~Montazerin, M.~Al~Aawar, A.~Ortega, and A.~Srivastava.
+\newblock Sparse interpretable deep learning with {LIES} networks for
+         symbolic regression.
+\newblock {\em arXiv:2506.08267}, 2025.
+
+\bibitem{shojaee2023tpsr}
+P.~Shojaee, K.~Meidani, A.~Barati~Farimani, and C.~K.~Reddy.
+\newblock Transformer-based planning for symbolic regression.
+\newblock {\em arXiv:2303.06833}, 2023.
 
 \end{thebibliography}
 

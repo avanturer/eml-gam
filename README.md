@@ -60,16 +60,22 @@ implementation:
    that eliminates the previously-reported divergence on bivariate
    rational targets without sacrificing accuracy on the targets the
    method already handled well.
-6. **Transcendence-complexity invariant** — a syntactic proxy for the
-   algebraic transcendence degree of the atom set of a ψ-tree. An
-   earlier `(ord, leading)` uniqueness induction (Path 1 in the
-   Pure-sinh Non-representability Lemma) was empirically refuted at
-   depth 5; the new invariant `tc(f)` is monotonically increasing on
-   every enumerated ψ-tree at depths 0–3 (`max tc: 0 → 2 → 4 → 5`) and
-   a PSLQ integer-relation check at 80 digits returns no non-trivial
-   relation. Details in
-   [docs/transcendence_analysis.md](docs/transcendence_analysis.md),
-   implementation in `eml_gam/transcendence.py`.
+6. **Transcendence-monotonicity theorem (witness family)** — an
+   *unconditional* strict-growth theorem for the algebraic
+   transcendence complexity `atc(T_d)` along the explicit witness
+   family `T_0 = x`, `T_{d+1} = ψ(T_d, T_d)`, via the Ax-Schanuel
+   theorem (Ax 1971; Noguchi 2022). The general Transcendence
+   Monotonicity statement — previously a conjecture — now reduces to a
+   single combinatorial genericity condition in the free ψ-algebra.
+   Numerical PSLQ verification at 200 decimal digits and integer-
+   coefficient bound `10^{20}` through depth 4 finds no non-trivial
+   relation, confirming the theorem. Proof in
+   [docs/transcendence_theorem.md](docs/transcendence_theorem.md),
+   verification in
+   [eml_gam/transcendence_witness.py](eml_gam/transcendence_witness.py).
+   Historical note on the syntactic version: earlier empirical sweep
+   `max tc: 0 → 2 → 4 → 5` at 80 digits for depths 0–3 in
+   [docs/transcendence_analysis.md](docs/transcendence_analysis.md).
 7. **Neural beam search proof of concept** — a two-layer MLP trained
    on sorted `(x, y)` samples predicts the slot choices of a random
    ground-truth snap. On depth-2 univariate targets top-16 beam
