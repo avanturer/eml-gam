@@ -128,6 +128,9 @@ class EMLGAM(nn.Module):
 
         self.register_buffer("x_mean", torch.zeros(n_features, dtype=DTYPE))
         self.register_buffer("x_std", torch.ones(n_features, dtype=DTYPE))
+        self.register_buffer("x_mean_eff", torch.zeros(n_features, dtype=DTYPE))
+        self.register_buffer("x_lo", torch.zeros(n_features, dtype=DTYPE))
+        self.register_buffer("x_hi", torch.zeros(n_features, dtype=DTYPE))
         self.register_buffer("y_mean", torch.zeros((), dtype=DTYPE))
         self.register_buffer("y_std", torch.ones((), dtype=DTYPE))
         self._fitted: bool = False
@@ -174,7 +177,13 @@ class EMLGAM(nn.Module):
         if not self.standardize:
             return x
         if self.scale_normalize:
-            return x / self.x_std
+            # Features with extreme scale (very small / very large std) use
+            # z-score: the mean is stored in ``x_mean_eff`` and subtracted.
+            # Moderate-scale features keep ``x_mean_eff == 0`` and are only
+            # divided by ``x_std``. This prevents the warm-start atlas from
+            # trying to evaluate primitives on values outside the outlier-
+            # filter acceptance band (see the Arrhenius regression fix).
+            return (x - self.x_mean_eff) / self.x_std
         return (x - self.x_mean) / self.x_std
 
     def forward(
@@ -253,17 +262,40 @@ class EMLGAM(nn.Module):
                 std = x.std(dim=0).clamp(min=1e-6)
                 self.x_mean.copy_(mean)
                 self.x_std.copy_(std)
+                self.x_lo.copy_(x.min(dim=0).values)
+                self.x_hi.copy_(x.max(dim=0).values)
                 if self.scale_normalize:
-                    keep_mask = (std >= 0.1) & (std <= 10.0)
+                    # Three regimes, chosen by empirical stability:
+                    #   std in [0.1, 100] — no transformation. Keeps features
+                    #     positive where they started positive, so log- and
+                    #     reciprocal-primitives remain valid. This is the
+                    #     common case (Cobb-Douglas, power law, Michaelis-
+                    #     Menten, exp decay, combined gas law).
+                    #   std < 0.1 or std > 100 — full z-score. Required for
+                    #     Arrhenius-class targets where the native input
+                    #     scale of the feature forces any absorbable
+                    #     coefficient to span several orders of magnitude,
+                    #     which warm-start cannot navigate if the primitive
+                    #     values fall outside the outlier-filter band.
+                    moderate = (std >= 0.1) & (std <= 100.0)
                     effective_std = torch.where(
-                        keep_mask, torch.ones_like(std), std
+                        moderate, torch.ones_like(std), std
+                    )
+                    effective_mean = torch.where(
+                        moderate, torch.zeros_like(mean), mean
                     )
                     self.x_std.copy_(effective_std)
+                    self.x_mean_eff.copy_(effective_mean)
+                else:
+                    self.x_mean_eff.copy_(mean)
                 self.y_mean.copy_(y_t.mean())
                 self.y_std.copy_(y_t.std().clamp(min=1e-6))
             y_work = (y_t - self.y_mean) / self.y_std
         else:
             y_work = y_t
+            with torch.no_grad():
+                self.x_lo.copy_(x.min(dim=0).values)
+                self.x_hi.copy_(x.max(dim=0).values)
 
         with torch.no_grad():
             self.bias.fill_(y_work.mean().item())
@@ -586,7 +618,12 @@ class EMLGAM(nn.Module):
         }
 
     @torch.no_grad()
-    def predict(self, X, clip_factor: float = 0.0) -> np.ndarray:
+    def predict(
+        self,
+        X,
+        clip_factor: float = 0.0,
+        input_clip_factor: float = 0.0,
+    ) -> np.ndarray:
         """Predict on new data.
 
         Parameters
@@ -595,12 +632,24 @@ class EMLGAM(nn.Module):
             If positive, clip predictions to
             ``[y_min - factor * range, y_max + factor * range]``
             where min/max/range are computed from the training target.
-            This prevents extrapolation explosions (e.g. exp(0.06 * age)
-            on Concrete). Set to 0 (default) to disable.
+            This prevents extrapolation explosions (for example
+            ``exp(0.06 * age)`` on the UCI Concrete dataset).
+        input_clip_factor : float
+            If positive, clamp inputs to
+            ``[x_lo - factor * range, x_hi + factor * range]`` before
+            evaluating the tree. With ``factor = 2`` the model is allowed
+            to extrapolate by up to two training-range widths beyond the
+            observed min/max; anything further is clamped to the clip
+            boundary. Set to 0 (default) to disable.
         """
         x = to_tensor(X)
         if x.dim() == 1:
             x = x.unsqueeze(1)
+        if input_clip_factor > 0.0 and self._fitted:
+            x_range = (self.x_hi - self.x_lo).clamp(min=1e-12)
+            lo = self.x_lo - input_clip_factor * x_range
+            hi = self.x_hi + input_clip_factor * x_range
+            x = torch.max(torch.min(x, hi), lo)
         out = self(x, destandardize_y=True).cpu().numpy()
         if clip_factor > 0.0 and self._fitted:
             y_lo = float(self.y_mean - 3.0 * self.y_std)

@@ -11,7 +11,7 @@ relationship is exponential, logarithmic, or power-law. On such targets
 this approach extrapolates correctly beyond the training range —
 something tree-based models (EBM, XGBoost) fundamentally cannot do.
 
-The project has five scientific contributions on top of the base
+The project has seven scientific contributions on top of the base
 implementation:
 
 1. A **landscape-geometry study** that quantifies the "scaling wall"
@@ -60,10 +60,29 @@ implementation:
    that eliminates the previously-reported divergence on bivariate
    rational targets without sacrificing accuracy on the targets the
    method already handled well.
+6. **Transcendence-complexity invariant** — a syntactic proxy for the
+   algebraic transcendence degree of the atom set of a ψ-tree. An
+   earlier `(ord, leading)` uniqueness induction (Path 1 in the
+   Pure-sinh Non-representability Lemma) was empirically refuted at
+   depth 5; the new invariant `tc(f)` is monotonically increasing on
+   every enumerated ψ-tree at depths 0–3 (`max tc: 0 → 2 → 4 → 5`) and
+   a PSLQ integer-relation check at 80 digits returns no non-trivial
+   relation. Details in
+   [docs/transcendence_analysis.md](docs/transcendence_analysis.md),
+   implementation in `eml_gam/transcendence.py`.
+7. **Neural beam search proof of concept** — a two-layer MLP trained
+   on sorted `(x, y)` samples predicts the slot choices of a random
+   ground-truth snap. On depth-2 univariate targets top-16 beam
+   recovery is 79% and top-64 is 100%; on depth-3 top-128 recovery is
+   1.7% (compared to ~0.05% for uniform sampling of the same snap
+   space). This is a proof that a learnable prior reduces the
+   effective search space by orders of magnitude, not a production
+   solver. Source in [eml_gam/neural_beam.py](eml_gam/neural_beam.py).
 
-See [docs/theory.md](docs/theory.md) for the theoretical background and
+See [docs/theory.md](docs/theory.md) for the theoretical background,
 [docs/sheffer_analysis.md](docs/sheffer_analysis.md) for the
-ψ-Sheffer analysis.
+ψ-Sheffer analysis, and [paper/paper.tex](paper/paper.tex) for a
+self-contained write-up of every contribution above.
 
 ## Why this exists
 
@@ -535,6 +554,9 @@ eml_gam/
     gam.py                  # EMLGAM model (robust multi-start, penalty, DoF)
     primitives.py           # primitive atlas, rank_atlas_candidates, warm-start
     train.py                # training loop (TrainConfig, train_tree, ...)
+    transcendence.py        # tc(f) invariant + PSLQ independence check
+    neural_beam.py          # learned snap predictor + beam-search decoder
+    atlas_expansion.py      # AEES (full + unbranched) snap enumeration
     symbolic.py             # sympy helpers
     interaction_select.py   # pair selection for bivariate components
     utils.py                # safe_eml, tensor conversion
@@ -556,8 +578,13 @@ scripts/
     download_datasets.py    # fetch UCI data
     save_results.py         # reproduce all benchmarks
 docs/
-    theory.md               # full theory write-up
-data/                       # downloaded CSVs (gitignored)
+    theory.md                      # full theory write-up
+    sheffer_analysis.md            # ψ-Sheffer analysis
+    transcendence_analysis.md      # transcendence invariant analysis
+paper/
+    paper.tex                      # full LaTeX manuscript
+    README.md                      # compilation + section-to-code map
+data/                              # downloaded CSVs (gitignored)
 ```
 
 ## Reproducing

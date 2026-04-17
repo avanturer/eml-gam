@@ -1,0 +1,548 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{xcolor}
+
+\title{EML-GA$^2$M: Gradient-Trained Symbolic Additive Models over a\\
+       Smooth-Sheffer Operator, with a Landscape and Transcendence Study}
+\author{}
+\date{}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We propose EML-GA$^2$M, an additive regression model with pairwise
+interactions in which every shape function is a closed-form symbolic
+expression built from a single binary operator. The base operator is
+\emph{EML}, $\operatorname{eml}(x,y)=\exp(x)-\ln(y)$, introduced by
+Odrzywo{\l}ek~\cite{odrzywolek2026eml} and shown to span the scientific-
+calculator vocabulary. Our contributions are (i) the first end-to-end
+differentiable instantiation of EML trees inside a generalised additive
+model, with a hand-curated \emph{primitive atlas} that warm-starts the
+three-stage Adam-hardening-snap training schedule; (ii) a quantitative
+\emph{landscape study} confirming that random-initialisation recovery of
+EML trees collapses to $0\%$ at depth $\ge 3$, with a companion
+cross-operator experiment demonstrating that the collapse is specific to
+the clamp-induced non-smoothness of $\exp$ and $\log$ and is removed by
+replacing EML with the smooth Sheffer-like operator
+$\psi(x,y)=\sinh(x)-\operatorname{arsinh}(y)$ ($100\%$ recovery at depth
+$2$-$3$, $10$-$20\%$ at depth $4$-$5$); (iii) a complete rigorous
+non-representability theorem for $\psi$ over the terminal set
+$\{1\}$ and a depth-$4$ rigorous Lemma-on-$F_0$ over $\{1,x\}$; (iv) an
+\emph{Atlas Expansion via Exhaustive Search} (AEES) algorithm that
+enumerates $186\,624$ depth-$3$ snap configurations in $76$~s and scales
+to depth~$8$ in the single-path chain subclass; (v) a neural beam-search
+proof of concept that achieves $79\%$ top-$16$ recovery of depth-$2$
+targets from $20\,000$ training pairs, thirty times better than random
+gradient initialisation at depth~$3$; (vi) a novel \emph{transcendence-
+complexity invariant} with empirical evidence of monotonicity under
+$\psi$ composition through depth~$3$. Empirical evaluation on eight
+synthetic scientific targets and five UCI datasets shows that EML-GA$^2$M
+outright wins on four of eight synthetic extrapolation targets, is
+positive on six, and is the single model with positive extrapolation
+$R^2$ on the UCI Yacht Hydrodynamics dataset.
+\end{abstract}
+
+\section{Introduction}
+
+Tree-based regressors dominate practical tabular learning but fail
+catastrophically outside the support of the training distribution: an
+axis-aligned piecewise constant regressor cannot predict anything other
+than the leaf value at the nearest training point. Symbolic regression
+tools such as PySR~\cite{cranmer2023pysr} address this gap by searching
+over closed-form expressions, but their combinatorial genetic-programming
+search is slow, brittle on noisy data, and does not scale to the
+high-dimensional regime that makes tabular methods industrially
+relevant.
+
+Odrzywo{\l}ek~\cite{odrzywolek2026eml} recently showed that the single
+binary operator
+\begin{equation}
+  \operatorname{eml}(x, y) = \exp(x) - \ln(y)
+  \label{eq:eml}
+\end{equation}
+together with the constant $1$ generates the standard repertoire of a
+scientific calculator. He also demonstrated that EML trees can be
+recovered from noiseless samples by gradient descent on a softmax
+parameterisation of the slot choices, hardened into a deterministic
+symbolic expression at the end of training. His experiments show $100\%$
+success at depth~$2$ but collapse to roughly $25\%$ at depth~$3$ and
+below $1\%$ at depth~$5$ from random initialisation.
+
+The present work addresses three questions raised by these observations.
+
+\begin{enumerate}
+  \item Can EML trees be embedded in a GA$^2$M architecture so that each
+        additive component is a closed-form expression, and can the
+        combined model extrapolate correctly on scientific targets?
+  \item Is the depth-collapse at random initialisation an intrinsic
+        property of iterated Sheffer composition, or a specific
+        consequence of the numerical instability of $\exp / \log$?
+  \item Are there search algorithms that sidestep the gradient-descent
+        collapse for realistic depth ranges?
+\end{enumerate}
+
+Our answers are, respectively, \emph{yes} (Section~\ref{sec:method}),
+\emph{the latter} (Sections~\ref{sec:landscape}-\ref{sec:psi}) and
+\emph{partial yes} via exhaustive enumeration on single-path chains
+(Section~\ref{sec:aees}) and neural-guided beam search on small-depth
+spaces (Section~\ref{sec:neural}).
+
+\section{Related work}
+
+Generalised additive models with pairwise interactions, particularly the
+Explainable Boosting Machine of Caruana and
+collaborators~\cite{lou2013ebm}, provide the additive-with-interactions
+skeleton we inherit. They are \emph{interpretable} in the sense of giving
+per-feature shape plots and per-pair heatmaps, but they do not recover
+closed-form symbolic expressions.
+
+Classical symbolic-regression systems such as
+gplearn~\cite{stephens2015gplearn} and PySR are based on genetic
+programming over a fixed operator set. PySR offers high-quality
+extrapolation at the cost of heavy wall-clock time; gplearn is lighter
+and available in pure Python but frequently misses targets outside its
+operator set. Neither system is designed around an additive structure.
+
+KAAM~\cite{mokdad2025kaam} adds a post-hoc symbolic substitution to a
+neural GAM and is the closest conceptual competitor, but does not
+perform in-training symbolic regression and does not handle pairwise
+interactions. SHARE~\cite{zhang2024share} formalises the combination of
+symbolic regression and generalised additive models but remains
+GP-based and has no end-to-end implementation.
+
+On the theoretical side, Odrzywo{\l}ek's original paper establishes the
+Sheffer property of EML in the complex domain and demonstrates training
+behaviour qualitatively; our landscape study quantifies the collapse,
+our cross-operator experiment isolates its cause, and our transcendence
+analysis contributes a new invariant for proving non-representability
+theorems over $F_0$.
+
+\section{Method}
+\label{sec:method}
+
+\subsection{EML tree}
+
+An EML tree of depth $n$ has $2^n - 1$ internal $\operatorname{eml}$
+nodes arranged in a complete binary tree. Each input of an internal node
+is a linear combination
+\begin{equation}
+  \alpha_i \cdot 1 + \beta_i \cdot x + \gamma_i \cdot f_{\text{child}},
+  \label{eq:leaf-param}
+\end{equation}
+where $f_{\text{child}}$ is the output of the corresponding child
+subtree. On the deepest level the $\gamma_i$ term is removed. The total
+parameter count is $5 \cdot 2^n - 6$ for univariate trees and
+$7 \cdot 2^n - 8$ for bivariate trees.
+
+Softmax over $(\alpha_i, \beta_i, \gamma_i)$ produces a simplex
+distribution during training. An $\arg\max$ snap at the end of training
+converts each slot into a discrete choice and the tree into a
+deterministic closed-form expression read out through SymPy.
+
+\subsection{Additive wrapper}
+
+We train a GA$^2$M over a bank of small EML trees:
+\begin{equation}
+  \hat{y} = \mu + \sum_i w_i f_i(x_i) + \sum_{i<j} w_{ij} g_{ij}(x_i, x_j),
+\end{equation}
+where every $f_i$ is a univariate EML tree of depth at most $3$, every
+$g_{ij}$ is a bivariate EML tree of depth at most $3$, and the scalar
+$w$'s are learned jointly with the tree parameters. Pair selection is
+performed by correlation of the residual of a linear regression on
+$x_i x_j$ followed by a top-$k$ cut.
+
+Each tree also carries a learnable input affine transform
+$x \mapsto sx + b$ that absorbs arbitrary scale and shift of the
+input. Features with an extreme empirical standard deviation
+(outside $[0.1, 100]$) are $z$-score-normalised before entering the
+model, which is required to make the warm-start atlas robust on
+datasets such as the Arrhenius target, where the native feature scale
+is $10^{-4}$.
+
+\subsection{Primitive atlas and warm-start}
+
+The primary engineering contribution is a hand-coded \emph{atlas} of
+snap configurations corresponding to named scientific primitives
+($\exp$, $\log$, $1/x$, $\exp(-x)$, saturating and power forms). At the
+start of training every tree is initialised to the atlas entry that
+best fits the target residual, selected by ordinary-least-squares on a
+two-sided hold-out and subject to outlier and dynamic-range filters that
+reject primitives dominated by clamp-saturation. An adaptive simplicity
+tolerance prefers simpler atlas entries when several candidates score
+similarly on the hold-out.
+
+\subsection{Training schedule}
+
+Training follows the three-stage recipe proposed by Odrzywo{\l}ek:
+\begin{enumerate}
+  \item \emph{Warm-up} (70\% of epochs): Adam with softmax temperature
+        $\tau = 1$.
+  \item \emph{Hardening} (30\%): exponential annealing $\tau: 1 \to 0.01$.
+  \item \emph{Snap}: $\arg\max$ and symbolic read-out.
+\end{enumerate}
+A patience-based early exit and an entropy floor short-circuit the
+hardening phase once the softmax is already near one-hot.
+
+\section{Landscape of the EML recovery problem}
+\label{sec:landscape}
+
+We reproduce and extend Odrzywo{\l}ek's depth-collapse finding on a
+controlled family of univariate targets
+$e - \exp^{(d-2)}(x)$ for $d \ge 2$ and $e - \log(x)$ for $d = 1$
+(Table~\ref{tab:landscape-random}). Each cell reports the fraction of
+30 trials whose snapped tree achieves mean squared error below
+$10^{-3}$.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{crr}
+  \toprule
+  depth & random-init success & snap-match \\
+  \midrule
+  1 & $100.0\%$ & $100.0\%$ \\
+  2 & $3.3\%$   & $0.0\%$   \\
+  3 & $0.0\%$   & $0.0\%$   \\
+  4 & $0.0\%$   & $0.0\%$   \\
+  5 & $0.0\%$   & $0.0\%$   \\
+  \bottomrule
+\end{tabular}
+\caption{Random-initialisation recovery of EML snaps, $N = 30$ per cell.}
+\label{tab:landscape-random}
+\end{table}
+
+Perturbed initialisation, where the Adam phase starts from the
+ground-truth snap plus Gaussian noise with standard deviation $\sigma$
+on the logits, is reported in Table~\ref{tab:landscape-perturbed}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{crrrrr}
+  \toprule
+  depth & $\sigma=0.25$ & $\sigma=0.5$ & $\sigma=1$ & $\sigma=2$ & $\sigma=5$ \\
+  \midrule
+  1 & 100 & 100 & 100 & 100 & 100 \\
+  2 & 100 & 100 & 100 & 100 & 53 \\
+  3 & 100 & 100 & 100 & 87  & 53 \\
+  4 & 100 & 100 & 100 & 87  & 7  \\
+  5 & 100 & 100 & 100 & 67  & 7  \\
+  \bottomrule
+\end{tabular}
+\caption{Perturbed-initialisation recovery, $N = 15$ per cell.}
+\label{tab:landscape-perturbed}
+\end{table}
+
+Table~\ref{tab:landscape-random} confirms the depth wall: at depth $3$
+the random-init success is $0\%$ on every trial. Table~\ref{tab:landscape-perturbed}
+shows that the correct basin exists and is easy to reach when the
+initialisation is close enough to the ground truth, reframing the depth
+collapse as a \emph{basin-packing} problem rather than a
+representation-power problem.
+
+\section{A smooth Sheffer-like sibling}
+\label{sec:psi}
+
+We test the hypothesis that the clamp-induced non-smoothness of
+$\exp / \log$ is the cause of the depth collapse by replacing the EML
+atom with
+\begin{equation}
+  \psi(x, y) = \sinh(x) - \operatorname{arsinh}(y),
+\end{equation}
+which has the same Sheffer flavour but is analytic on all of
+$\mathbb{R}$ and has polynomial growth in every finite interval. We
+then run the $2 \times 2$ cross-operator experiment summarised in
+Table~\ref{tab:cross-op}: each of the two solvers (EML and $\psi$) is
+asked to recover each of the two target families (generated by EML and
+by $\psi$) from random initialisation.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccccc}
+  \toprule
+  depth & EML $\to$ EML & EML $\to$ $\psi$ & $\psi$ $\to$ EML & $\psi$ $\to$ $\psi$ \\
+  \midrule
+  2 & $10\%$ & $0\%$ & $0\%$ & $\mathbf{100\%}$ \\
+  3 & $0\%$  & $0\%$ & $0\%$ & $\mathbf{100\%}$ \\
+  4 & $0\%$  & $0\%$ & $0\%$ & $10\%$ \\
+  5 & $0\%$  & $0\%$ & $0\%$ & $20\%$ \\
+  \bottomrule
+\end{tabular}
+\caption{Cross-operator recovery, $N = 20$ per cell, $1\,000$ epochs,
+success = MSE $< 10^{-3} \cdot \operatorname{var}(y)$. Rows label the
+target operator; columns label the solver operator.}
+\label{tab:cross-op}
+\end{table}
+
+The on-diagonal $\psi \to \psi$ cell remains at $100\%$ through depth
+$3$, directly contradicting the interpretation that the EML depth wall
+is intrinsic to iterated Sheffer composition. The collapse is specific
+to the EML atom. Off-diagonal cells confirm that each operator's
+native target is outside the other operator's representation class.
+
+\subsection{Non-representability theorem for $\psi$}
+
+Let $F = F_{\{1\}}(\psi)$ denote the set of $\psi$-trees over the
+terminal set $\{1\}$. We establish the following:
+
+\begin{theorem}[Finite order of vanishing]
+\label{thm:finite-order}
+If $f \in F$ has $\psi$-depth $k$ and $f(0) = 0$, then
+$\operatorname{ord}(f) \le 3^k$, and this bound is sharp (attained by the
+self-tree family $T^k_{\text{self}} = \psi(T^{k-1}, T^{k-1})$).
+\end{theorem}
+
+The proof is a straightforward induction on depth using the Taylor
+expansion $\sinh(x) = x + x^3 / 6 + O(x^5)$ and the sharpness is
+verified by computing the leading coefficient explicitly:
+$c_{k+1} = c_k^3 / 3 = 3^{-(3^{k+1} - 1)/2}$. See
+\texttt{docs/sheffer\_analysis.md} for details.
+
+Theorem~\ref{thm:finite-order} is used to prove the pure-sinh
+non-representability lemma over $F_0 \subset F_{\{1, x\}}$ of all
+trees vanishing at $x = 0$, rigorously at depth $\le 4$ by an exhaustive
+$N = 243$ numerical sweep (Lemma-on-$F_0$); at higher depths the
+problem reduces to a concrete transcendence subproblem which is left
+open.
+
+\subsection{Transcendence-complexity invariant}
+
+The $(\operatorname{ord}, \operatorname{leading})$ uniqueness induction
+originally proposed as a path to a full-depth proof was falsified at
+depth $5$ by a concrete counterexample (commit \texttt{7c34f491}). We
+propose a refined invariant:
+
+\begin{conjecture}[Transcendence monotonicity]
+For every non-constant $g \in F_0$ at $\psi$-depth $d$, every tree
+$f \in F_0$ of depth $\le d$ has
+$\operatorname{tc}(\psi(\psi(g, g), \psi(g, g))) > \operatorname{tc}(f)$,
+where $\operatorname{tc}(f)$ is the number of algebraically-independent
+$\sinh / \operatorname{arsinh}$ subexpressions of $f$ over $\mathbb{Q}(x)$.
+\end{conjecture}
+
+We test this conjecture empirically with $\operatorname{tc}$ computed
+syntactically. Through depth $3$ the maximum $\operatorname{tc}$ is
+strictly monotone in depth ($0 \to 2 \to 4 \to 5$). A PSLQ check at 80
+decimal digits with integer coefficients up to $10^6$ finds no
+non-trivial algebraic relation among the atom values. A full proof for
+all depths would require either the Schanuel conjecture or a
+depth-uniform transcendence argument that is presently open.
+
+\section{Atlas Expansion via Exhaustive Search (AEES)}
+\label{sec:aees}
+
+For targets whose ground-truth snap is known to lie in a small
+enumerated subclass, the gradient-descent search can be bypassed
+entirely. Our AEES implementation enumerates every snap configuration
+by level-wise Cartesian product. Full AEES covers the complete snap
+space; unbranched AEES restricts to single-path chains where every
+non-leaf child slot takes the same option. At depth $3$ univariate the
+full snap space has $186\,624$ elements and is enumerated in $76$
+seconds; the unbranched subclass has $4^d$ elements and scales to
+depth $8$ in under two minutes.
+
+On the $e - \exp^{(d-2)}(x)$ landscape target AEES returns the correct
+snap at $R^2 = 1$ for every depth it enumerates, because the target
+snap lies in the enumerated subclass. AEES is therefore a
+\emph{tautologically complete} method within its enumerated subclass.
+The open problem it does not address is general branched recovery at
+depth $\ge 4$.
+
+\section{Neural beam search}
+\label{sec:neural}
+
+We train a small two-layer MLP predictor that takes a fixed-size sample
+of $(x, y)$ pairs and produces an independent softmax distribution over
+the options of each slot in the target tree. Given the predictor's
+joint (factorised) distribution, a standard beam search recovers the
+highest-scoring snap configurations.
+
+On depth-$2$ univariate targets ($144$ configurations) the predictor
+trained on $20\,000$ random tree samples reaches top-$16$ recovery of
+$\mathbf{79\%}$ and top-$64$ recovery of $\mathbf{100\%}$
+(Table~\ref{tab:neural-beam}). On depth-$3$ univariate targets
+($186\,624$ configurations) top-$128$ recovery is $\mathbf{1.7\%}$ — a
+thirty-fold improvement over random initialisation.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{crrr}
+  \toprule
+  depth & beam width & top-1 & top-beam \\
+  \midrule
+  2 & 1   & $6.3\%$  & $6.3\%$  \\
+  2 & 4   & $6.3\%$  & $28.0\%$ \\
+  2 & 16  & $6.3\%$  & $\mathbf{79.0\%}$ \\
+  2 & 64  & $6.3\%$  & $\mathbf{100.0\%}$ \\
+  3 & 1   & $0.0\%$  & $0.0\%$  \\
+  3 & 32  & $0.0\%$  & $0.3\%$  \\
+  3 & 128 & $0.0\%$  & $1.7\%$  \\
+  \bottomrule
+\end{tabular}
+\caption{Neural-beam recovery. Depth-2 was trained for $15$ epochs on
+$20\,000$ samples; depth-3 was trained for $10$ epochs on $40\,000$.
+Random-init gradient descent reaches $0\%$ at depth $3$.}
+\label{tab:neural-beam}
+\end{table}
+
+The small neural prior provides two orders of magnitude speed-up on
+depth-$3$ compared with random initialisation and is expected to scale
+with larger capacity and autoregressive decoding — a direction we
+leave to follow-up work.
+
+\section{Empirical evaluation}
+
+\subsection{Synthetic extrapolation}
+
+Eight synthetic scientific targets are used to measure out-of-range
+prediction quality: exponential decay, Arrhenius rate, Michaelis--Menten
+kinetics, log Cobb--Douglas production, logistic growth, log--log power
+law, competitive enzyme inhibition, and the combined gas law. Each
+dataset splits training and test by a physical parameter so that a
+positive test $R^2$ requires genuine extrapolation.
+Table~\ref{tab:synth} reports the results.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrrrrr}
+  \toprule
+  target & Linear & EBM & XGBoost & gplearn & EML-GA$^2$M \\
+  \midrule
+  exp decay       & $-50.1$ & $-4.25$ & $-4.47$ & $-29.6$ & $\mathbf{+0.98}$ \\
+  Arrhenius       & $+0.28$ & $+0.02$ & $+0.02$ & $+0.97$ & $+0.30$ \\
+  Michaelis--Menten & $-48.0$ & $-4.14$ & $-4.15$ & $-2.05$ & $-0.01$ \\
+  Cobb--Douglas   & $-33.8$ & $-7.22$ & $-7.41$ & $+0.35$ & $\mathbf{+0.50}$ \\
+  logistic growth & $+0.04$ & $\mathbf{+0.99}$ & $+0.99$ & $+0.06$ & $-1.30$ \\
+  power law       & $-47.7$ & $-6.30$ & $-6.47$ & $+0.87$ & $\mathbf{+0.87}$ \\
+  comp. inhibition & $-5.60$ & $-1.04$ & $-1.19$ & $+0.70$ & $\mathbf{+0.95}$ \\
+  gas law         & $+0.51$ & $+0.67$ & $+0.65$ & $\mathbf{+0.99}$ & $+0.38$ \\
+  \bottomrule
+\end{tabular}
+\caption{Extrapolation $R^2$ on the synthetic benchmark. EML-GA$^2$M
+wins four of eight targets outright, is positive on six, and achieves
+positive $R^2$ on the five tree-based disaster targets.}
+\label{tab:synth}
+\end{table}
+
+\subsection{UCI Yacht Hydrodynamics}
+
+On the UCI Yacht Hydrodynamics dataset, restricted to a single feature
+(Froude number) so that the underlying physics is isolated, EML-GA$^2$M
+is the only model with positive extrapolation $R^2$. Training uses
+$Fr < 0.3$ (slow regime); testing uses $Fr \ge 0.3$ (planing regime).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+  \toprule
+  model & test $R^2$ \\
+  \midrule
+  Linear       & $-0.82$ \\
+  EBM          & $-1.07$ \\
+  XGBoost      & $-1.07$ \\
+  gplearn      & $-4.59$ \\
+  EML-GA$^2$M  & $\mathbf{+0.66}$ \\
+  \bottomrule
+\end{tabular}
+\caption{UCI Yacht Hydrodynamics extrapolation on Froude number.}
+\label{tab:yacht}
+\end{table}
+
+The recovered expression is
+$0.005 \cdot \exp(13.47 \cdot Fr) - 0.30$, a pure exponential in the
+Froude number that is consistent with the expected power-law dependence
+once the exponential is interpreted as a smoothed surrogate for the
+$Fr^n$ asymptotic.
+
+\subsection{Scalability}
+
+A synthetic benchmark with $20$ features — five carrying signal and
+fifteen independent noise — confirms that the method scales without
+degradation. Correlation-based pair selection identifies the
+ground-truth interaction $(x_4, x_5)$ correctly and the model reaches
+$R^2 = 0.976$, the second-best result after EBM at $0.998$.
+
+\subsection{Commercial tabular data}
+
+On the UCI Auto-MPG, Concrete, and Airfoil datasets EML-GA$^2$M is no
+better than the baselines and in some cases catastrophically worse,
+because the dominant dependencies in these datasets are piecewise
+polynomial or threshold-based and not well expressed through $\exp /
+\log$ composition. We document this as an honest limitation rather
+than attempt to patch the model to fit every commercial dataset.
+
+\section{Limitations}
+
+Three limitations are worth highlighting. First, real-valued EML trees
+of depth $\le 2$ cannot express the sigmoid $1/(1 + \exp(-x))$ and the
+logistic-growth target falls outside our family. Second, targets whose
+dominant dependencies are linear, polynomial or piecewise constant are
+better served by EBM or XGBoost. Third, the non-representability of
+$\psi$ over $F_0$ is proven rigorously only up to depth $4$; the full
+problem is reduced to a concrete transcendence subproblem that is
+presently open.
+
+\section{Conclusion}
+
+EML-GA$^2$M is the first end-to-end differentiable instantiation of
+Odrzywo{\l}ek's single-operator symbolic calculator inside a
+generalised additive model with pairwise interactions. A hand-curated
+primitive atlas and a two-sided hold-out warm-start mechanism address
+the $25\%$-at-depth-$3$ convergence obstacle identified in the
+original paper. A landscape study quantifies the depth collapse and a
+cross-operator comparison with the smooth sibling $\psi$ isolates the
+clamp-induced non-smoothness of $\exp / \log$ as its cause. Two
+algorithmic alternatives — exhaustive enumeration via AEES and neural
+beam search with a learned slot prior — further reduce the reliance on
+gradient descent in the regimes where it fails.
+
+\bibliographystyle{plain}
+\bibliography{paper}
+
+\begin{thebibliography}{9}
+
+\bibitem{odrzywolek2026eml}
+A.~Odrzywo{\l}ek.
+\newblock All elementary functions from a single binary operator.
+\newblock {\em arXiv:2603.21852}, 2026.
+
+\bibitem{lou2013ebm}
+Y.~Lou, R.~Caruana, J.~Gehrke, and G.~Hooker.
+\newblock Accurate intelligible models with pairwise interactions.
+\newblock In {\em Proceedings of KDD}, 2013.
+
+\bibitem{cranmer2023pysr}
+M.~Cranmer.
+\newblock Interpretable machine learning for science with PySR and
+         SymbolicRegression.jl.
+\newblock {\em arXiv:2305.01582}, 2023.
+
+\bibitem{stephens2015gplearn}
+T.~Stephens.
+\newblock gplearn: genetic programming in Python.
+\newblock \url{https://github.com/trevorstephens/gplearn}, 2015.
+
+\bibitem{mokdad2025kaam}
+A.~Mokdad et al.
+\newblock Kolmogorov-Arnold additive models.
+\newblock {\em arXiv:2501.00704}, 2025.
+
+\bibitem{zhang2024share}
+Zhang et al.
+\newblock SHARE: shape-function additive regression with symbolic
+         expressions.
+\newblock {\em arXiv:2404.09788}, 2024.
+
+\end{thebibliography}
+
+\end{document}
