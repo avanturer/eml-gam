@@ -313,10 +313,11 @@ not a free corollary of any obvious invariant.
 
 - Theorem W: strict `atc` growth on the witness family `{T_d}`.
 - Theorem O: strict `atc` growth along every orbit `{W_d(g)}` for
-  non-constant `g ∈ F_0`.
-- Corollary Q: quantitative lower bound `atc(W_d(g)) \ge atc(g) + d`.
+  non-constant `g ∈ F_0` satisfying `e^g \notin F(g)^{alg}`.
+- Corollary Q: quantitative lower bound `atc(W_d(g)) \ge atc(g) + 2d`
+  via the arsinh-step Proposition.
 - Corollary F: strict filtration `F_0^W \subsetneq F_1^W \subsetneq
-  \cdots` with unbounded transcendence degree.
+  \cdots` with `tr.deg_{C(x)}(F_d^W) \ge 2d`.
 
 **Open:**
 
