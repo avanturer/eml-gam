@@ -60,17 +60,24 @@ implementation:
    that eliminates the previously-reported divergence on bivariate
    rational targets without sacrificing accuracy on the targets the
    method already handled well.
-6. **Transcendence-monotonicity theorem (witness family)** — an
-   *unconditional* strict-growth theorem for the algebraic
-   transcendence complexity `atc(T_d)` along the explicit witness
-   family `T_0 = x`, `T_{d+1} = ψ(T_d, T_d)`, via the Ax-Schanuel
-   theorem (Ax 1971; Noguchi 2022). The general Transcendence
-   Monotonicity statement — previously a conjecture — now reduces to a
-   single combinatorial genericity condition in the free ψ-algebra.
-   Numerical PSLQ verification at 200 decimal digits and integer-
-   coefficient bound `10^{20}` through depth 4 finds no non-trivial
-   relation, confirming the theorem. Proof in
-   [docs/transcendence_theorem.md](docs/transcendence_theorem.md),
+6. **Transcendence-monotonicity theorems** — two *unconditional*
+   strict-growth theorems for the algebraic transcendence complexity
+   `atc`, via Ax-Schanuel (Ax 1971; Noguchi 2022) + a short
+   `cosh`-transcendence lemma:
+   - *Theorem W* (witness family): `atc(T_{d+1}) ≥ atc(T_d) + 1` for
+     `T_0 = x`, `T_{d+1} = ψ(T_d, T_d)`.
+   - *Theorem O* (orbit): `atc(W_{d+1}(g)) ≥ atc(W_d(g)) + 1` for
+     every non-constant seed `g ∈ F_0` and the orbit
+     `W_{d+1}(g) = ψ(W_d(g), W_d(g))`. Strictly generalises Theorem W.
+   
+   The universal Transcendence Monotonicity Conjecture (for arbitrary
+   non-orbit trees) now reduces to a single combinatorial genericity
+   condition `(Gen-d)` in the free ψ-algebra; an explicit
+   ℚ-linear dependency `ψ(1,x) = ψ(x,x) − ψ(x,1) + (sinh 1 − arsinh 1)`
+   shows `(Gen-d)` is non-vacuous. Numerical PSLQ verification at 200
+   decimal digits and integer-coefficient bound `10²⁰` through depth 4
+   finds no non-trivial relation, consistent with both theorems. Proof
+   in [docs/transcendence_theorem.md](docs/transcendence_theorem.md),
    verification in
    [eml_gam/transcendence_witness.py](eml_gam/transcendence_witness.py).
    Historical note on the syntactic version: earlier empirical sweep

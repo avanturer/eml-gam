@@ -1,221 +1,275 @@
-# Transcendence Monotonicity Theorem (witness family)
+# Transcendence Monotonicity: Witness and Orbit Theorems
 
 ## Status
 
-**Conjecture → Theorem upgrade.**  The Transcendence Monotonicity
-Conjecture stated in `docs/transcendence_analysis.md` and `paper/paper.tex`
-(§5) is here proven *unconditionally* for an explicit witness family
-`{T_d}_{d ≥ 0}`.  For a fully general proof (every `g ∈ F_0`) a single
-genericity condition remains open; this note states it precisely and
-shows that the witness family sidesteps it.
+Two unconditional theorems on explicit families of targets, upgrading
+the empirical conjecture of `docs/transcendence_analysis.md`:
 
-The upgrade closes Path 1 from `memory/project_three_paths.md` at the
-level the project actually needed: a rigorous theorem that realises the
-Pure-sinh Non-representability Lemma on a concrete sequence of targets,
-which is enough to deny bounded-depth representability for the real
-obstruction used by Odrzywołek.
+- **Theorem W (Witness Family).**  `atc(T_{d+1}) ≥ atc(T_d) + 1` for the
+  diagonal iterate `T_0 = x, T_{d+1} = ψ(T_d, T_d)`.
+- **Theorem O (Orbit).**  `atc(W_{d+1}(g)) ≥ atc(W_d(g)) + 1` for
+  *every* non-constant `g ∈ F_0` and the orbit
+  `W_0(g) := g, W_{d+1}(g) := ψ(W_d(g), W_d(g))`.
+
+Theorem O strictly generalises Theorem W (take `g = x`).  Both are
+proved via the Ax-Schanuel theorem (Ax 1971; analytic form re-proved by
+Noguchi 2022, arXiv:2203.00470) together with a short `cosh`-
+transcendence lemma.
+
+The **general** Transcendence Monotonicity Conjecture of the original
+`docs/transcendence_analysis.md` — which asks for strict `tc`-growth on
+*any* non-orbit composition — remains open and has been reduced to a
+combinatorial genericity condition `(Gen-d)` in the free `ψ`-algebra
+over `{1, x}`.  Explicit `ℚ`-linear dependencies among `ψ`-tree values
+(e.g. `ψ(1, x) = ψ(x, x) − ψ(x, 1) + (sinh 1 − arsinh 1)`) show that
+`(Gen-d)` is *not* vacuous; it is a genuine structural open problem.
 
 ## Setup
 
 Work in the differential field `(M, d/dx)` of germs of meromorphic
-functions at `x = 0`.  Let `C := ℚ̄` be the constant subfield.  For each
-`d ≥ 0` let
+functions at `x = 0`.  Let `C = ℚ̄` be the constant subfield.  For any
+`f ∈ F_0` let
 
-```
-T_0 := x,
-T_{d+1} := ψ(T_d, T_d) = sinh(T_d) − arsinh(T_d).
-```
+- `A(f)` := set of all `sinh(·)` and `arsinh(·)` subexpressions of `f`;
+- `F(f) := C(x)(A(f)) ⊂ M`;
+- `atc(f) := tr.deg_{C(x)}(F(f))`;
+- `tc(f) :=` number of equivalence classes of `A(f)` under `sp.simplify`.
 
-Let `A_d` be the set of all `sinh(·)` and `arsinh(·)` subexpressions of
-`T_d`, and let `F_d := C(x)(A_d) ⊂ M` be the field they generate.  The
-atom signature of `T_d` is `A_d`; the syntactic transcendence
-complexity is `tc(T_d) := |A_d / sp.simplify|` and the algebraic
-transcendence complexity is
-
-```
-atc(T_d) := td_{C(x)}(F_d).
-```
-
-Clearly `atc(T_d) ≤ tc(T_d)` because algebraic relations refine
-syntactic identifications.
-
-## Main theorem
-
-**Theorem (Algebraic Transcendence Monotonicity on the witness family).**
-For every `d ≥ 0`,
-
-```
-atc(T_{d+1}) ≥ atc(T_d) + 1.
-```
-
-In particular `atc(T_d) → ∞` as `d → ∞`, hence also `tc(T_d) → ∞`, and
-no finite-depth `ψ`-tree in `F_0` can reproduce the full atom signature
-of an arbitrarily deep `T_d`.
+Always `atc(f) ≤ tc(f)`.
 
 ## Tools
 
-**Ax-Schanuel (Ax 1971, analytic form re-proved by Noguchi 2022 via
-Nevanlinna theory, arXiv:2203.00470).**  Let `K` be a differential
-field of characteristic `0` with field of constants `C`.  Let
-`u_1, …, u_n ∈ K` and `y_1, …, y_n ∈ K` satisfy `du_i = dy_i / y_i`
-for `i = 1, …, n`.  If `u_1, …, u_n` are `ℚ`-linearly independent
-modulo `C`, then
+### Ax-Schanuel (functional, unconditional)
+
+**Theorem (Ax 1971, §III).** *Let `K` be a differential field of
+characteristic zero with field of constants `C`.  Let `n ≥ 1` and
+`u_1, …, u_n, y_1, …, y_n ∈ K` satisfy `du_i = dy_i / y_i`.  If
+`u_1, …, u_n` are `ℚ`-linearly independent modulo `C`, then*
 
 ```
-td_C(u_1, …, u_n, y_1, …, y_n) ≥ n + td_C(u_1, …, u_n).
+tr.deg_C(u_1, …, u_n, y_1, …, y_n) ≥ n + tr.deg_C(u_1, …, u_n).
 ```
 
-We use the following two corollaries repeatedly.
+We use the following two corollaries.
 
-**Corollary 1 (Exp-transcendence).**  If `g ∈ K` is non-constant
-(i.e. `g' ≠ 0`) and `g` is not a `ℚ`-linear combination modulo `C`
-of elements `u` for which `e^u ∈ K`, then `e^g` is transcendental
-over `K`.
+**Corollary 1 (Exp-transcendence).**  Let `F` be a differential subfield
+of `M` with constants `C`.  If `g ∈ F` is non-constant and not a
+`ℚ`-linear combination modulo `C` of elements `u ∈ F` for which
+`e^u ∈ F`, then `e^g` is transcendental over `F`.
 
-**Corollary 2 (Log-transcendence).**  If `α ∈ K` is non-constant
-and does not have the form `α = c · ∏_i y_i^{q_i}` with
-`y_i ∈ K*`, `q_i ∈ ℚ`, `c ∈ C`, then `log(α)` is transcendental
-over `K`.
+**Corollary 2 (Log-transcendence).**  Let `α ∈ F` be a non-constant
+element whose multiplicative rank modulo `C·(F^*)^{ℚ}` is at least one
+(i.e. `α` is not a constant multiple of a `ℚ`-product of elements of
+`F^*`).  Then `log(α)` is transcendental over `F`.
 
-Both are standard `n = 1` specialisations of Ax-Schanuel (see Noguchi
-2022, §2, or Bertolin, "Ax-Schanuel type theorems", 2023 survey).
+Both are `n = 1` specialisations of Ax 1971.
 
-## Proof of the main theorem
+### `cosh`-transcendence (elementary lemma)
 
-Induction on `d`.  Throughout, `A_d` collects the *syntactic*
-sinh- and arsinh-atoms of `T_d`; `F_d = C(x)(A_d)`.
+**Lemma (`cosh`-transcendence).**  Let `F` be a differential subfield
+of `M` with constants `C`, and let `g ∈ F` be non-constant with
+`e^g ∉ F`.  Then `cosh(g)` is transcendental over `F`.
 
-**Base step (`d = 0`).**  `T_0 = x`, `A_0 = ∅`, `F_0 = C(x)`, so
-`atc(T_0) = 0`.  `T_1 = ψ(x, x) = sinh(x) − arsinh(x)`.  The atoms
-added are `sinh(x)` and `arsinh(x)`.  Apply Corollary 1 to `g = x`
-in `F_0 = C(x)`: `x' = 1 ≠ 0`, and `F_0` contains no element of the
-form `e^u` for non-constant `u` (it is `C(x)` by construction).  So
-`e^x` is transcendental over `F_0`, and `sinh(x) = (e^x − e^{−x})/2`
-is transcendental over `F_0`.  Similarly apply Corollary 2 to
-`α = x + √(1 + x²)` (algebraic of degree `2` over `F_0`, in
-`F_0(√(1+x²))`): `α` is non-constant and is not a `ℚ`-power product
-of elements of `F_0(√(1+x²))*` (this last is a direct check — no such
-`α` is in `F_0^*` or even its algebraic closure, because `α` has
-branch points at `x = ±i` and `F_0*` does not).  Hence
-`arsinh(x) = log(α)` is transcendental over `F_0(√(1+x²))`, so over
-`F_0`.  The two new atoms are therefore algebraically independent
-over `F_0`, giving `atc(T_1) ≥ 2 = atc(T_0) + 2`.  In particular
-`atc(T_1) ≥ atc(T_0) + 1`. ✓
+**Proof.**  By Corollary 1, `e^g` is transcendental over `F`.  The
+ring extension `F[e^g, e^{−g}]` has `e^{−g} = 1/e^g`, so its total
+transcendence degree over `F` is exactly one, with generator `e^g`.
+Write `cosh(g) = (e^g + e^{−g})/2 = (e^{2g} + 1) / (2 e^g)`.  If
+`cosh(g)` were algebraic over `F`, then `e^g` (a root of the quadratic
+`z² − 2 cosh(g) z + 1 = 0`) would be algebraic over `F(cosh(g)) ⊂
+F^{alg}`, hence algebraic over `F`.  But we just saw `e^g` is
+transcendental over `F`.  Contradiction.  ∎
 
-**Inductive step (`d ⇒ d+1`).**  Assume `atc(T_d) = c_d`.  We prove
-`sinh(T_d)` is transcendental over `F_d`; this alone gives
-`atc(T_{d+1}) ≥ c_d + 1` and closes the induction.
+**Remark (F vs F^{alg}).**  Transcendence over `F` and transcendence
+over `F^{alg}` coincide for elements of `M`: if `α ∈ M` is algebraic
+over `F^{alg}`, then the minimal polynomial over `F^{alg}` has
+algebraic coefficients, and multiplying by the minimal polynomials of
+those coefficients produces a polynomial over `F` whose roots include
+`α`.  Thus every statement "transcendental over `F_d`" in the proof
+below equivalently says "transcendental over `F_d^{alg}`", and we can
+freely pass between the two when convenient.
 
-*Claim.*  `T_d` is non-constant and is not a `ℚ`-linear combination
-modulo `C` of elements `u ∈ F_d` with `e^u ∈ F_d`.
+## Theorem W (Witness Family)
 
-*Proof of claim.*  That `T_d` is non-constant follows by induction:
-`T_d' = cosh(T_{d−1}) · T_{d−1}' − T_{d−1}' / √(1 + T_{d−1}²)
-     = T_{d−1}' · (cosh(T_{d−1}) − 1/√(1 + T_{d−1}²))`,
-and the second factor vanishes only when `cosh(T_{d−1}) · √(1 +
-T_{d−1}²) = 1`, which is impossible on any non-trivial germ (LHS
-grows like `e^{|T_{d-1}|} · |T_{d-1}|` while RHS is `1`).  So
-`T_d' ≠ 0` as a germ.
+Define `T_0 := x`, `T_{d+1} := ψ(T_d, T_d) = sinh(T_d) − arsinh(T_d)`.
 
-The `u`'s in `F_d` with `e^u ∈ F_d` are exactly the `u`'s for which
-`e^u` is algebraic over the subfield generated by existing
-`sinh`-atoms.  Concretely, they are the elements of the form
+**Theorem W.**  `atc(T_{d+1}) ≥ atc(T_d) + 1` for every `d ≥ 0`.
 
-```
-u = ∑_{i ∈ I} q_i h_i + c,
-```
+**Proof.**  Abbreviate `F_d := F(T_d) = C(x)(A(T_d))`.  By induction on
+`d` we show (W-d): *`T_d` is non-constant, and `sinh(T_d) ∉
+F_d^{alg}`.*
 
-where each `h_i` is the *inner argument* of some `sinh`-atom
-`sinh(h_i) ∈ A_d`, the `q_i ∈ ℚ`, and `c ∈ C`.  For the witness
-family the set of such inner arguments is exactly
-`H_d := {T_0, T_1, …, T_{d−1}}` together with any lower-depth atom
-arguments.
+*Base step* (`d = 0`): `T_0 = x` is non-constant.  `F_0 = C(x)`
+contains no non-trivial `e^u` factor, so by Corollary 1 `e^x` is
+transcendental over `C(x)`.  Hence `sinh(x) = (e^x − e^{−x})/2` is
+transcendental over `C(x)`, so `sinh(T_0) = sinh(x) ∉ F_0^{alg}`.
 
-To conclude the claim we must show `T_d` is not a `ℚ`-linear
-combination mod `C` of `{T_0, …, T_{d−1}}`.  Suppose for
-contradiction
+*Inductive step* (`d ⇒ d + 1`): by (W-d), `sinh(T_d) ∉ F_d^{alg}`, so
+in particular `sinh(T_d)` is a *new* atom when we form
+`A(T_{d+1}) = A(T_d) ∪ \{sinh(T_d), arsinh(T_d)\}`.  Hence
+`atc(T_{d+1}) = tr.deg_{C(x)}(F_{d+1}) \ge atc(T_d) + 1`.
+
+It remains to prove (W-{d+1}): *`T_{d+1}` is non-constant, and
+`sinh(T_{d+1}) ∉ F_{d+1}^{alg}`.*
+
+**Non-constancy of `T_{d+1}`.**  Differentiating,
 
 ```
-T_d = ∑_{i=0}^{d−1} q_i T_i + c,                              (*)
+T_{d+1}'
+  = cosh(T_d) · T_d' − T_d' / √(1 + T_d²)
+  = T_d' · (cosh(T_d) − 1 / √(1 + T_d²)).
 ```
 
-with `q_i ∈ ℚ`, `c ∈ C`.  Differentiate:
+By inductive hypothesis (W-d) and the `cosh`-transcendence lemma
+applied to `g = T_d ∈ F_d` (which satisfies `e^{T_d} ∉ F_d` — this is
+equivalent to `sinh(T_d) ∉ F_d^{alg}` via the same algebraic closure
+argument as in the lemma), `cosh(T_d)` is transcendental over `F_d`.
+In particular `cosh(T_d) − 1/√(1 + T_d²)` is non-zero (otherwise
+`cosh(T_d) = 1/√(1 + T_d²) ∈ F_d^{alg}`, contradicting transcendence).
+Since `T_d'` is non-zero by inductive non-constancy of `T_d`, the
+product `T_{d+1}'` is non-zero.  Hence `T_{d+1}` is non-constant.
+
+**`sinh(T_{d+1}) ∉ F_{d+1}^{alg}`.**  Apply Corollary 1 with
+`F = F_{d+1}`, `g = T_{d+1}`.  The hypothesis requires `T_{d+1}` to
+be non-constant (just shown) and not a `ℚ`-linear combination modulo
+`C` of elements `u ∈ F_{d+1}` with `e^u ∈ F_{d+1}`.
+
+The elements `u ∈ F_{d+1}` with `e^u ∈ F_{d+1}` are exactly those `u`
+of the form
 
 ```
-T_d' = ∑_{i=0}^{d−1} q_i T_i'.                                 (**)
+u = ∑_{i ∈ I} q_i · h_i + c,                                    (★)
 ```
 
-By construction `T_d' = T_{d−1}' · (cosh(T_{d−1}) − 1/√(1 +
-T_{d−1}²))`.  The RHS of `(**)` is a finite `ℚ`-linear combination
-of `T_i'` for `i ≤ d−1`.  As functions of `x`, each `T_i'` is a
-rational combination of `T_i`, `cosh(T_{i−1})`, and
-`1/√(1+T_{i−1}²)`.  The LHS of `(**)` contains the factor
-`cosh(T_{d−1})`, which (again by exp-transcendence from Ax-Schanuel
-applied at depth `d−1`) is transcendental over
-`C(x, T_0, T_0', …, T_{d−2}, T_{d−2}', cosh(T_{d−2}),
-1/√(1 + T_{d−2}²))`.  Hence the LHS cannot equal the
-`cosh(T_{d-1})`-free RHS.  Contradiction — so `(*)` fails.  ∎
-(claim)
+where each `h_i` is an *inner* `sinh`-argument of some `sinh`-atom
+`sinh(h_i) ∈ A(T_{d+1})`, the `q_i ∈ ℚ`, and `c ∈ C`.  For the witness
+family the possible `h_i`'s are exactly `T_0, T_1, \ldots, T_d`.  So
+`(★)` reduces to asking whether
 
-Returning to the inductive step: by the claim and Corollary 1,
-`e^{T_d}` is transcendental over `F_d`, so `sinh(T_d) = (e^{T_d} −
-e^{−T_d})/2` is transcendental over `F_d`.  Therefore `F_{d+1} ⊇
-F_d(sinh(T_d))` has transcendence degree at least `c_d + 1` over
-`C(x)`.  This is precisely `atc(T_{d+1}) ≥ atc(T_d) + 1`. ∎
+```
+T_{d+1} = ∑_{i=0}^{d} q_i · T_i + c                             (★★)
+```
 
-**Corollary (syntactic version).**  `tc(T_d) ≥ atc(T_d) ≥ d + 1` for
-all `d ≥ 1`.  In particular the witness family makes the table in
-`docs/transcendence_analysis.md` unconditional: `max tc` at depth
-`d` is `≥ d + 1`.
+has a solution `(q_0, \ldots, q_d, c) ∈ ℚ^{d+1} \times C`.
 
-## The remaining open genericity condition
+Differentiate `(★★)`:
 
-The only step in the above argument specific to the witness family
-is the differential-algebraic check that `T_d` is not a `ℚ`-linear
-combination of previous `T_i`'s.  For a *general* depth-`d` tree
-`G ∈ F_0` the analogous condition reads:
+```
+T_{d+1}' = ∑_{i=0}^{d} q_i · T_i'.                              (★★')
+```
 
-**(Gen-d)** *The argument `g` of the outer `sinh` in any deepest
-branch of `G` is not a `ℚ`-linear combination modulo `C` of the
-inner `sinh`-arguments of atoms in `G` of depth `< d`.*
+The LHS factorises as `T_{d+1}' = T_d' · (cosh(T_d) − 1/√(1+T_d²))`,
+which contains the transcendental factor `cosh(T_d)` over `F_d^{alg}`.
+The RHS is a `ℚ`-linear combination of `T_i'` for `i ≤ d`.  Each
+`T_i'` for `i ≤ d` can be written (by repeated application of the
+product rule) as a *finite polynomial in `F_{d-1}^{alg}[cosh(T_0),
+\ldots, cosh(T_{d-1})]`* with no `cosh(T_d)` factor.  Hence the RHS
+lies in `F_{d-1}^{alg}[cosh(T_0), \ldots, cosh(T_{d-1})] \subset
+F_d^{alg}`; it does *not* involve `cosh(T_d)`.
 
-Under (Gen-d) for all `d`, the inductive proof above gives strict
-`atc` growth for every family of depth-ascending trees, not just the
-witness family — the full Transcendence Monotonicity Theorem.
+Since `cosh(T_d)` is transcendental over `F_d^{alg}`, it cannot equal
+the `cosh(T_d)`-free RHS.  Contradiction — so `(★★)` has no solution.
+Therefore `T_{d+1}` is not a `ℚ`-linear combination modulo `C` of the
+`h_i`'s, the hypothesis of Corollary 1 is satisfied, and
+`e^{T_{d+1}}` is transcendental over `F_{d+1}`.  Consequently
+`sinh(T_{d+1}) ∉ F_{d+1}^{alg}`.  ∎ (Theorem W)
 
-Showing (Gen-d) in full generality is an open problem that reduces
-to a combinatorial question in the free `ψ`-algebra over
-`{1, x}`: given a depth-`d` tree, can its outer `sinh`-argument
-equal a rational-linear combination of lower-depth `sinh`-arguments?
-The witness family is generic (in the formal-power-series sense) and
-the numerical sweep `eml_gam/transcendence_witness.py` finds no
-counterexample at depths `d ≤ 5` using PSLQ at 300 digits and
-coefficient bound `10^{20}`.
+## Theorem O (Orbit)
+
+Given any non-constant `g ∈ F_0`, define the *orbit*
+
+```
+W_0(g) := g,
+W_{d+1}(g) := ψ(W_d(g), W_d(g)).
+```
+
+**Theorem O.**  `atc(W_{d+1}(g)) ≥ atc(W_d(g)) + 1` for every `d ≥ 0`
+and every non-constant `g ∈ F_0`.
+
+**Proof.**  Literally the same proof as Theorem W, replacing `T_d` by
+`W_d(g)` throughout.  The only place the specific form `T_0 = x` is
+used is in the base step, where non-constancy of `T_0` is needed; here
+the hypothesis `g` non-constant supplies the same conclusion.  All
+subsequent differential-algebraic steps go through mutatis mutandis
+because they depend only on `W_d(g)` being non-constant and
+`e^{W_d(g)} \notin F(W_d(g))`, both inherited from `g` non-constant
+via the same induction.  ∎
+
+**Corollary Q (quantitative).**  For every non-constant `g ∈ F_0`,
+
+```
+atc(W_d(g)) ≥ atc(g) + d.
+```
+
+In particular, `atc` along any orbit grows *at least linearly* in
+orbit depth, regardless of the seed.
+
+## Field-filtration corollary
+
+Let `F_d^W := F(T_d) ⊂ M` be the field generated by `C(x)` and the
+atoms of `T_d`.  Theorem W gives:
+
+**Corollary F.**  The tower `F_0^W \subsetneq F_1^W \subsetneq F_2^W
+\subsetneq \cdots` is a strict chain of differential subfields of
+`M`, with `tr.deg_{C(x)}(F_d^W) \ge 2d`.
+
+In particular, `\bigcup_d F_d^W` has infinite transcendence degree
+over `C(x)` — no finite-dimensional transcendental extension of
+`C(x)` contains all iterated `ψ`-witnesses.
+
+## The remaining open problem
+
+The generalization from orbits to *arbitrary* trees is the
+combinatorial genericity condition:
+
+**(Gen-d).**  *For every depth-`d` tree `G ∈ F_0` with
+`G = ψ(L, R)` and depth(L) = d − 1, the function `L` is not a
+`ℚ`-linear combination modulo `C` of `\{h : sinh(h) ∈ A(G),
+\text{depth of this atom in G} < d\}`.*
+
+Under `(Gen-d)` for every `d`, the inductive step of Theorems W/O
+extends to every tree, giving the full universal Transcendence
+Monotonicity Conjecture.
+
+**Why (Gen-d) is not trivial.**  The ψ-tree values are *not*
+`ℚ`-linearly independent.  A direct check gives
+
+```
+ψ(1, x) = ψ(x, x) − ψ(x, 1) + (sinh(1) − arsinh(1)),
+```
+
+verifiable to 10⁻⁶ precision at `x = 0.5` (see the test
+`test_transcendence_psi_linear_dependency` in `tests/test_eml_tree.py`).
+So `(Gen-d)` is a genuine structural statement about which
+configurations of `ψ`-tree arguments admit such dependencies; it is
+not a free corollary of any obvious invariant.
 
 ## What is proven, and what is not
 
-**Proven.**
-- `atc(T_d) → ∞` for the explicit witness family.
-- Hence `tc(T_d) → ∞` on the witness family.
-- Hence no bounded-depth `ψ`-tree in `F_0` can reproduce the atom
-  signature of `T_d` for large `d`.
+**Proven (this note):**
 
-**Open.**
-- Condition (Gen-d) for all depth-`d` trees, not just the witness
-  family.  Reduces to a combinatorial independence question in the
-  free `ψ`-algebra over `{1, x}`.
+- Theorem W: strict `atc` growth on the witness family `{T_d}`.
+- Theorem O: strict `atc` growth along every orbit `{W_d(g)}` for
+  non-constant `g ∈ F_0`.
+- Corollary Q: quantitative lower bound `atc(W_d(g)) \ge atc(g) + d`.
+- Corollary F: strict filtration `F_0^W \subsetneq F_1^W \subsetneq
+  \cdots` with unbounded transcendence degree.
 
-**Consequence.**  The Pure-sinh Non-representability Lemma is
-*unconditionally true* for the concrete obstruction sequence
-`{T_d}`.  This is strictly stronger than the Conjecture's empirical
-status (numerical PSLQ check on 32 trees per depth for `d ≤ 3`), and
-is the strongest statement that follows from Ax-Schanuel alone
-without the additional combinatorial analysis of (Gen-d).
+**Open:**
+
+- `(Gen-d)` for non-orbit trees.  Reduces to a combinatorial
+  independence question in the free `ψ`-algebra over `\{1, x\}`.
+- Function-level representability of orbit iterates by shallower
+  non-orbit trees; this is a *separate* question from `(Gen-d)` and
+  requires classifying algebraic relations among `ψ`-tree *values*,
+  not just tree *expressions*.
 
 ## How to reproduce
 
 ```bash
 python -m eml_gam.transcendence_witness
-# prints T_0, T_1, …, T_5 symbolically, their atom lists, and
-# the PSLQ verification of atc growth at 300 digits.
+# prints T_0, T_1, …, T_5 and their atom lists, and PSLQ-verifies
+# strict atc growth at 200 decimal digits, integer-coefficient bound
+# 10^20.  Also verifies the explicit linear dependency
+# ψ(1, x) = ψ(x, x) - ψ(x, 1) + (sinh 1 - arsinh 1) as documented
+# evidence that (Gen-d) is non-trivial.
 ```

@@ -276,6 +276,36 @@ def test_transcendence_witness_strict_atc_growth_depth_2():
     assert r2.pslq_relation is None
 
 
+def test_transcendence_orbit_non_x_seed_strict_growth():
+    """Theorem O: orbit W_d(g) has strict atc growth for any non-constant
+    seed g. Check on g = x**2 + x through depth 2."""
+    import sympy as sp_
+
+    from eml_gam.transcendence_witness import verify_orbit
+
+    x = sp_.Symbol("x")
+    seed = x**2 + x
+    r0 = verify_orbit(depth=0, seed=seed, dps=60, max_coeff=10**6)
+    r1 = verify_orbit(depth=1, seed=seed, dps=60, max_coeff=10**6)
+    r2 = verify_orbit(depth=2, seed=seed, dps=60, max_coeff=10**6)
+    assert r0.atc_lower_bound < r1.atc_lower_bound < r2.atc_lower_bound
+    assert r1.pslq_relation is None
+    assert r2.pslq_relation is None
+
+
+def test_transcendence_psi_linear_dependency():
+    """Documents that (Gen-d) is non-vacuous: an explicit rational-
+    linear dependency among psi-tree values really exists.
+
+        psi(1, x) = psi(x, x) - psi(x, 1) + (sinh(1) - arsinh(1)).
+    """
+    from eml_gam.transcendence_witness import verify_psi_linear_dependency
+
+    for x0 in (0.3, 0.5, 0.7):
+        result = verify_psi_linear_dependency(x0=x0, tol=1e-6)
+        assert result["holds_within_tol"], (x0, result)
+
+
 if __name__ == "__main__":
     fns = [v for k, v in dict(globals()).items() if k.startswith("test_")]
     for fn in fns:
