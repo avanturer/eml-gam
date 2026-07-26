@@ -1,0 +1,47 @@
+{
+ "levels": [
+  2,
+  6,
+  38,
+  1446,
+  1431542
+ ],
+ "stats": [
+  {
+   "level": 1,
+   "n_candidate_pairs": 4,
+   "pool_size": 6,
+   "new_entries": 4,
+   "syntactic_live": 4,
+   "syntactic_snaps": 4,
+   "seconds": 0.00037288665771484375
+  },
+  {
+   "level": 2,
+   "n_candidate_pairs": 36,
+   "pool_size": 38,
+   "new_entries": 32,
+   "syntactic_live": 36,
+   "syntactic_snaps": 144,
+   "seconds": 0.0013091564178466797
+  },
+  {
+   "level": 3,
+   "n_candidate_pairs": 1444,
+   "pool_size": 1446,
+   "new_entries": 1408,
+   "syntactic_live": 1444,
+   "syntactic_snaps": 186624,
+   "seconds": 0.04532909393310547
+  },
+  {
+   "level": 4,
+   "n_candidate_pairs": 2090916,
+   "pool_size": 1431542,
+   "new_entries": 1430096,
+   "syntactic_live": 2090916,
+   "syntactic_snaps": 313456656384,
+   "seconds": 111.92074298858643
+  }
+ ]
+}
