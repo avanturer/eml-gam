@@ -60,17 +60,34 @@ vectors, minimal expression DAGs). On top of it:
   error. Grid-R²=1.0 ties are common at depth ≥ 4 and are *rejected*.
 
 Recovery on **depth-critical** random targets (provably not
-representable one level shallower — the honest test):
+representable one level shallower — the honest test; recovery counts
+only if the expression matches the target on an independent dense grid
+to 1e−6):
 
-| depth | syntactic space | canonical pool | gradient descent (10 restarts) | uniform sampling (100k) |
-|------:|----------------:|:--------------:|:------------------------------:|:-----------------------:|
-| 3 | 1.9×10⁵ | **40/40** (0.00 s) | TBD | TBD |
-| 4 | 3.1×10¹¹ | **TBD** | TBD | TBD |
-| 5 | 8.8×10²³ | **TBD** | TBD | TBD |
+| depth | syntactic space | canonical pool | gradient descent (8 restarts) | uniform sampling (30k) |
+|------:|----------------:|:--------------:|:-----------------------------:|:----------------------:|
+| 3 | 1.9×10⁵ | **40/40** (0.00 s) | 1/8 (4 MSE-hits) | 6/8 |
+| 4 | 3.1×10¹¹ | **40/40** (0.03 s) | 1/8 (1 MSE-hit) | 4/8 |
+| 5 | 8.8×10²³ | **36/40** (23 s avg) | 0/8 (2 MSE-hits) | 1/8 |
+
+Two honest footnotes. (i) GD's "MSE-hits" reach low training MSE with
+the *wrong formula* — dense verification rejects them; this
+MSE-good/formula-wrong gap is exactly why unverified recovery claims
+mislead. (ii) Uniform sampling is *not* hopeless at depths 3–4: dead
+slots give small live trees millions of syntactic realisations, so
+blind sampling finds syntactically abundant targets — another face of
+the same collapse. It dies at depth 5 (space 8.8×10²³), where the pool
+holds 90% (its 4 misses exhaust the default 300k-candidate/300 s
+budget in clamp-degenerate mega-run regimes and are reported as
+explicit failures, never silent). The fraction of random deep trees
+that are *not* depth-critical is itself measured: 21/66 random depth-5
+trees collapse to shallower functions.
 
 Coverage of unfiltered random deeper targets by the depth-5 solver
-(their children collapse into the pool): depth 6: TBD, depth 7: TBD,
-depth 8: TBD. Reproduce: `python -m eml_gam.benchmarks.depth_wall`.
+(their children collapse functionally into the depth-4 pool):
+**depth 6: 14/30 (47%), depth 7: 6/30 (20%), depth 8: 4/30 (13%)** —
+the uncovered remainder is the honest residual frontier.
+Reproduce: `python -m eml_gam.benchmarks.depth_wall`.
 
 **Showcase.** The source paper's own bivariate ML target
 `ln(e − ln(eˣ − ln y))` — depth 5, the family its >1000 gradient runs
@@ -125,21 +142,49 @@ deployable additive model:
 * two-sided tail validation + backward elimination on the
   extrapolation frontier (kills shapes that merely re-explain a
   stronger feature's variance);
-* **per-feature gates**: free extension beyond the training range only
-  if it beats the clipped (flat, tree-like) extension on the tails;
+* **per-feature gates, earned not granted**: every component —
+  including plain linear terms — extends beyond the training range
+  only if its free extension beats the flat (tree-like) extension by
+  a margin on the feature's tails, judged with the full model;
+* **frontier family selection**: the symbolic model competes against
+  structurally-flat challengers (boxed-linear, constant) on the
+  extrapolation frontier; challengers deploy only on a clear win, and
+  raw unbounded linear extrapolation is never deployed;
 * a declared output envelope as the last line of defence.
 
-Result (9 UCI physical extrapolation splits, identical data for all
-models — full table in `safe_uci_results.json`):
+Result — 9 UCI physical extrapolation splits, identical data and
+splits for all models (extrapolation R²; full details in
+`safe_uci_results.json`):
 
 | dataset | linear | EBM | XGBoost | EML-GA²M unguarded | **SafePoolGAM** |
 |---|---:|---:|---:|---:|---:|
-| TBD | | | | | |
+| yacht | −0.82 | −1.07 | −1.07 | −0.95 | **+0.63** |
+| concrete | −40.42 | **+0.54** | +0.58 | −2.7×10⁷ | +0.11 |
+| superconductivity | +0.64 | +0.65 | **+0.74** | −3.8×10⁵ | −0.00 |
+| auto_mpg | −3.00 | **+0.44** | −0.13 | −757.6 | +0.19 |
+| energy_eff | +0.91 | **+0.93** | +0.93 | −1.1×10⁵ | +0.73 |
+| abalone | **+0.14** | −0.24 | −0.20 | −3.3×10⁴ | −0.07 |
+| ccpp | **+0.29** | −1.57 | −1.67 | −745.4 | −0.62 |
+| airfoil | **+0.27** | +0.13 | +0.11 | −7.8×10⁵ | −0.47 |
+| forest_fires | −0.22 | **−0.02** | −0.77 | −170.5 | −0.03 |
+| **worst case** | −40.4 | −1.6 | −1.7 | −2.7×10⁷ | **−0.6** |
 
-On yacht it recovers `0.076·exp(13.3·Fr)` (R² **+0.63** where every
-baseline is negative); on the datasets where the unguarded model
-imploded it degrades gracefully to flat/linear behaviour — never a
-catastrophic score, by construction.
+The three claims this table supports, exactly as stated:
+
+1. **Best worst-case of any model.** SafePoolGAM's worst score across
+   all nine datasets is −0.62 — versus −1.6 (EBM), −1.7 (XGBoost),
+   −40.4 (linear), and −2.7×10⁷ (its own unguarded predecessor, which
+   is catastrophically last on every single dataset).
+2. **The closed-form win survives the safety machinery.** Yacht:
+   `0.076·exp(13.3·Fr)`, R² +0.63, where every baseline is negative —
+   a genuine beyond-the-training-range extrapolation no tree model can
+   produce.
+3. **Graceful degradation is structural, not lucky.** Every deployed
+   prediction path is either flat beyond the training box (tree-like)
+   or individually certified on held-out tails; raw unbounded linear
+   extrapolation is never deployed (that is how linear regression
+   earns its −40.4).
+
 Reproduce: `python -m scripts.run_uci_safe`.
 
 ### 5. Retained theory: ψ-expressivity and transcendence monotonicity

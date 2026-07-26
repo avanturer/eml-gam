@@ -7,8 +7,8 @@
       147,
       19407
     ],
-    "build_seconds": 0.9588196277618408,
-    "solve_seconds": 10.70693063735962,
+    "build_seconds": 0.8049666881561279,
+    "solve_seconds": 9.860631942749023,
     "n_matches": 16,
     "recovered": true,
     "expression": "E - log(exp(E)/(E - log(exp(x) - log(y))))"
@@ -50,11 +50,6 @@
         "exact_depth": 1,
         "affine_depth": 1,
         "expression": "E - log(x)"
-      },
-      "exp(exp(x))": {
-        "exact_depth": null,
-        "affine_depth": 4,
-        "expression": "+0 +15.1543 * exp(exp(x) - E)"
       },
       "sinh(x)": {
         "exact_depth": null,

@@ -99,9 +99,9 @@ def fig_recovery():
             label="pool coverage of random deeper targets",
         )
     ax.plot(depths, gd_rate, "s-", color="tab:red",
-            label="gradient descent (10 restarts)")
+            label="gradient descent (8 restarts)")
     ax.plot(depths, uni_rate, "v-", color="tab:orange",
-            label="uniform syntactic sampling (100k)")
+            label="uniform syntactic sampling (30k)")
     ax.plot(paper_d, paper_r, "^:", color="gray",
             label="blind recovery reported in the source paper")
     ax.set_xlabel("target depth")

@@ -221,8 +221,8 @@ def run_gd_method(
     nested: tuple,
     pool: FunctionPool,
     depth: int,
-    n_restarts: int = 10,
-    n_epochs: int = 1200,
+    n_restarts: int = 8,
+    n_epochs: int = 1000,
 ) -> dict:
     import torch
 
@@ -328,9 +328,9 @@ def main(
     depths=(3, 4, 5),
     coverage_depths=(6, 7, 8),
     n_targets: int = 40,
-    n_targets_gd: int = 12,
-    n_targets_uniform: int = 12,
-    uniform_budget: int = 100_000,
+    n_targets_gd: int = 8,
+    n_targets_uniform: int = 8,
+    uniform_budget: int = 30_000,
     out_path: str = "depth_wall_results.json",
 ) -> dict:
     x = make_grid()

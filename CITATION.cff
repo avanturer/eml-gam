@@ -1,16 +1,19 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "EML-GA²M: Gradient-trained symbolic GA²M built on the EML operator"
+title: "EML-GA²M / Canonical Pools: complete function-space enumeration for EML symbolic regression"
 abstract: >-
-  Implementation of a generalized additive model with pairwise interactions
-  in which every shape function is a closed-form expression built from the
-  single binary operator eml(x, y) = exp(x) - log(y). Trained end-to-end by
-  soft-to-hard annealing over a primitive atlas of known snap configurations.
+  Canonical function-pool enumeration for symbolic regression over the
+  single binary operator eml(x, y) = exp(x) - log(y): the reachable
+  function space collapses by five orders of magnitude relative to its
+  syntax, enabling complete enumeration to depth 4, analytic root
+  inversion for depth-5 exact recovery, minimal-depth certificates, a
+  mechanistic theory of the depth wall, and SafePoolGAM — an additive
+  model with certified safe extrapolation on tabular data.
 authors:
   - family-names: "avanturer"
     given-names: ""
-version: "0.1.0"
-date-released: "2026-04-16"
+version: "0.2.0"
+date-released: "2026-07-26"
 repository-code: "https://github.com/avanturer/eml-gam"
 license: MIT
 references:

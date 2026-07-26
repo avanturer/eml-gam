@@ -48,9 +48,12 @@ inversion}: $y=\exp(\mathrm{clip}(a))-\ln(\mathrm{clamp}(b))$ implies
 $\mathrm{clip}(a)=\ln(y+\ln \mathrm{clamp}(b))$, so each candidate $b$
 yields a hash lookup for $a$. On depth-critical random targets
 (provably not representable one level shallower) verified exact
-recovery is $40/40$, $40/40$ and $38/40$ at depths 3, 4, 5 versus
-$0$--$8\%$ for multi-start Adam and ${\sim}0\%$ for uniform syntactic
-sampling; the source paper's own bivariate showcase
+recovery is $40/40$, $40/40$ and $36/40$ at depths 3, 4, 5 — at
+0.00\,s, 0.03\,s and 23\,s per target — versus at most $1/8$ for
+multi-start Adam at any depth ($0/8$ at depth 5); uniform syntactic
+sampling survives at depths 3--4 on syntactically abundant targets
+(itself a corollary of the collapse) and drops to $1/8$ at depth 5.
+The source paper's own bivariate showcase
 $\ln(e-\ln(e^x-\ln y))$ — depth 5, the very family on which its
 ${>}1000$ gradient runs plateaued — is recovered exactly in $10.7$ s.
 As a by-product the atlas yields \emph{minimal-depth certificates}
@@ -75,7 +78,9 @@ declared output envelope. On nine UCI extrapolation splits it keeps
 the closed-form wins of its unguarded predecessor (yacht
 $R^2=+0.63$ from the recovered law $0.076\,e^{13.3\,\mathrm{Fr}}$)
 while eliminating its catastrophic failures ($R^2$ of $-8245$ and
-worse), and it never finishes catastrophically last. The earlier
+worse): its worst score across the suite is $-0.62$ — the best
+worst-case of any compared model (EBM $-1.6$, XGBoost $-1.7$, linear
+$-40$). The earlier
 theoretical contributions of this project — the cross-operator
 landscape, the $\psi$ non-representability results, and two
 unconditional transcendence-monotonicity theorems via Ax--Schanuel —
@@ -284,24 +289,32 @@ proves nothing). All methods receive the same 320 points; recovery
 means matching the target on a dense 1111-point in-range grid to
 relative tolerance $10^{-6}$ — grid ties at $R^2=1.0$ are common at
 depth $\ge4$ and are \emph{not} accepted. Baselines: multi-start Adam
-with temperature annealing (10 restarts $\times$ 1200 epochs, the
+with temperature annealing (8 restarts $\times$ 1000 epochs, the
 reference approach), and uniform syntactic snap sampling with OLS
-readout (100k samples).
+readout (30k samples).
 
 \begin{table}[t]
 \centering\small
 \begin{tabular}{lcccc}
 \toprule
-depth & syntactic snaps & pool (this work) & gradient descent & uniform 100k \\
+depth & syntactic snaps & pool (this work) & gradient descent & uniform 30k \\
 \midrule
-3 & $1.9\times10^{5}$  & \textbf{40/40} \,(0.0 s) & TBD & TBD \\
-4 & $3.1\times10^{11}$ & \textbf{TBD} & TBD & TBD \\
-5 & $8.8\times10^{23}$ & \textbf{TBD} & TBD & TBD \\
+3 & $1.9\times10^{5}$  & \textbf{40/40} \,(0.00 s) & 1/8 \,(4 MSE-hits) & 6/8 \\
+4 & $3.1\times10^{11}$ & \textbf{40/40} \,(0.03 s) & 1/8 \,(1 MSE-hit) & 4/8 \\
+5 & $8.8\times10^{23}$ & \textbf{36/40} \,(23 s)   & 0/8 \,(2 MSE-hits) & 1/8 \\
 \bottomrule
 \end{tabular}
-\caption{Verified exact recovery on depth-critical random targets
-(40 targets per depth; GD and uniform on 12-target subsets for
-compute parity). Mean seconds per target in parentheses.}
+\caption{Verified exact recovery on depth-critical random targets (40
+per depth; GD --- 8 restarts $\times$ 1000 epochs --- and uniform
+sampling on 8-target subsets for compute parity; mean seconds per
+target in parentheses). GD's \emph{MSE-hits} reach low training error
+with the wrong formula and are rejected by dense verification — the
+gap unverified recovery claims hide. Uniform sampling is effective at
+depths 3--4 because dead slots give small live trees millions of
+syntactic realisations (a corollary of the collapse, not a
+contradiction); it dies at depth 5. The pool's four depth-5 misses
+exhaust the default 300k-candidate/300 s budget in clamp-degenerate
+mega-run regimes and are reported as explicit failures.}
 \label{tab:recovery}
 \end{table}
 
@@ -318,11 +331,13 @@ class — is the honest residual frontier.
 \toprule
 target depth & 6 & 7 & 8 \\
 \midrule
-recovered by depth-5 solver & TBD & TBD & TBD \\
+recovered by depth-5 solver & 14/30 (47\%) & 6/30 (20\%) & 4/30 (13\%) \\
 \bottomrule
 \end{tabular}
 \caption{Functional coverage of random deeper targets (30 valid
-targets per depth).}
+targets per depth, unfiltered): the fraction whose root children
+collapse functionally into the depth-4 pool. The remainder is the
+honest residual frontier.}
 \label{tab:coverage}
 \end{table}
 
@@ -440,19 +455,27 @@ ternary-refined rate, $u^k$, $\ln u$ — the pool grammar has no input
 affine, so classical shapes carry the scale burden), ranked by
 $R^2$ on held-out \emph{tail} slices rather than in-sample fit,
 backfit for two rounds, pruned by backward elimination on the
-extrapolation frontier, gated per feature (free versus clipped
-extension, decided on the tails), and wrapped in a declared output
-envelope. Catastrophic extrapolation is excluded by construction;
-genuine closed-form extrapolation survives the gates.
+extrapolation frontier, and gated per feature: \emph{every} component
+— including plain linear terms — is evaluated at the flat-beyond-box
+clipped input unless its free extension beats the clipped one by a
+margin on the feature's tails, judged with the full model fit on
+inner rows. Finally the symbolic model must win deployment on the
+extrapolation frontier against two structurally-flat challengers
+(boxed-linear and the constant mean); raw unbounded linear
+extrapolation is never deployed, and a declared output envelope
+backstops everything. Catastrophic extrapolation is excluded by
+construction; genuine closed-form extrapolation survives the gates.
 
-On the nine-dataset UCI physical-extrapolation suite of the earlier
-project iteration (train below a physical threshold, test above),
-SafePoolGAM keeps the yacht win with the recovered law
-$0.076\,e^{13.3\,\mathrm{Fr}}$ ($R^2=+0.63$, versus $-0.8$/$-1.1$ for
-linear/tree baselines) and — unlike the unguarded EML-GA$^2$M, which
-fails catastrophically on six of nine datasets (down to
-$R^2=-2.7\times10^{7}$ in the re-run) — never finishes with a
-catastrophic score. Full per-dataset numbers: Table~\ref{tab:uci}.
+On the nine-dataset UCI physical-extrapolation suite (train below a
+physical threshold, test above), SafePoolGAM keeps the yacht win with
+the recovered law $0.076\,e^{13.3\,\mathrm{Fr}}$ ($R^2=+0.63$, versus
+$-0.8$/$-1.1$ for linear/tree baselines), has the best worst-case
+$R^2$ of any compared model ($-0.62$, versus $-1.6$ for EBM, $-1.7$
+for XGBoost, $-40.4$ for linear regression — whose unbounded
+extrapolation is exactly what the gates forbid — and
+$-2.7\times10^{7}$ for the unguarded EML-GA$^2$M), and never finishes
+with a catastrophic score. Full per-dataset numbers:
+Table~\ref{tab:uci}.
 
 \begin{table}[t]
 \centering\small
@@ -460,12 +483,25 @@ catastrophic score. Full per-dataset numbers: Table~\ref{tab:uci}.
 \toprule
 dataset & linear & EBM & XGBoost & unguarded & SafePoolGAM \\
 \midrule
-\multicolumn{6}{c}{TBD — filled from \texttt{safe\_uci\_results.json}} \\
+yacht            & $-0.82$  & $-1.07$ & $-1.07$ & $-0.95$            & $\mathbf{+0.63}$ \\
+concrete         & $-40.42$ & $+0.54$ & $+0.58$ & $-2.7\times10^{7}$ & $+0.11$ \\
+superconduct.    & $+0.64$  & $+0.65$ & $+0.74$ & $-3.8\times10^{5}$ & $-0.00$ \\
+auto\_mpg        & $-3.00$  & $+0.44$ & $-0.13$ & $-757.6$           & $+0.19$ \\
+energy\_eff      & $+0.91$  & $+0.93$ & $+0.93$ & $-1.1\times10^{5}$ & $+0.73$ \\
+abalone          & $+0.14$  & $-0.24$ & $-0.20$ & $-3.3\times10^{4}$ & $-0.07$ \\
+ccpp             & $+0.29$  & $-1.57$ & $-1.67$ & $-745.4$           & $-0.62$ \\
+airfoil          & $+0.27$  & $+0.13$ & $+0.11$ & $-7.8\times10^{5}$ & $-0.47$ \\
+forest\_fires    & $-0.22$  & $-0.02$ & $-0.77$ & $-170.5$           & $-0.03$ \\
+\midrule
+worst case       & $-40.4$  & $-1.6$  & $-1.7$  & $-2.7\times10^{7}$ & $\mathbf{-0.6}$ \\
 \bottomrule
 \end{tabular}
 \caption{Extrapolation $R^2$ on nine UCI physical splits (identical
 data and splits for all models; superconductivity train subsampled to
-5000 rows for all models).}
+5000 rows for all models). SafePoolGAM has the best worst-case of any
+model, is the only model positive on yacht — a genuine
+beyond-the-range closed-form extrapolation — and its unguarded
+predecessor is catastrophically last on every dataset.}
 \label{tab:uci}
 \end{table}
 

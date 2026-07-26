@@ -21,22 +21,29 @@ SafePoolGAM addresses both with machinery already in this repository:
    quantiles of each feature), which is where extrapolation behaviour
    lives. A shape that only wins in the bulk is worth nothing at the
    extrapolation frontier.
-3. **Per-feature extrapolation gates.** After fitting, each feature
-   keeps its symbolic extension beyond the training range only if the
-   free extension beats the clipped (constant-beyond-range) extension
-   on the tail slices. Ungated features are evaluated at the clipped
-   input — exactly the flat extension a tree ensemble would produce.
-4. **A declared output envelope.** Predictions are clamped to the
-   training-target range widened by ``envelope_margin`` times the
-   target span on each side. Tree ensembles are structurally confined
-   to the observed target range; SafePoolGAM grants itself a wider —
-   but finite and declared — envelope, so a wrong formula can cost at
-   most a bounded miss, never a five-order-of-magnitude one.
+3. **Per-feature extrapolation gates, earned not granted.** *Every*
+   component — including plain linear terms — is evaluated at the
+   clipped (flat-beyond-the-training-box) input unless its free
+   extension beats the clipped one by a margin on the feature's tail
+   slices, judged with the full additive model fit on the inner rows.
+   Flat extension is exactly what a tree ensemble would produce; free
+   extension must be earned with evidence.
+4. **Frontier family selection.** The final symbolic model competes
+   against two structurally-flat challengers — boxed-linear (linear
+   inside the training box, flat outside) and the constant mean — on
+   the extrapolation frontier (tail rows), each scored with weights
+   fit on inner rows. A challenger deploys only if it wins by a clear
+   margin; raw unbounded linear extrapolation is never deployed.
+5. **A declared output envelope.** Predictions are clamped to the
+   training-target range widened by ``envelope_margin`` target spans
+   per side — the last line of defence, catching only
+   orders-of-magnitude insanity.
 
-The result is a model that keeps the closed-form wins where structure
-exists (it can genuinely leave the training range, unlike any tree
-model) while being *constructionally incapable* of the catastrophic
-losses of its unguarded predecessor.
+The result keeps the closed-form wins where structure exists (the
+model can genuinely leave the training range, unlike any tree model)
+while being *constructionally incapable* of the catastrophic losses of
+its unguarded predecessor: every deployed prediction path is either
+flat beyond the box or individually certified on held-out tails.
 """
 
 from __future__ import annotations
@@ -114,8 +121,10 @@ class SafePoolGAM:
         tail_quantile: float = 0.1,
         n_search: int = 900,
         envelope_margin: float = 20.0,
-        min_gain: float = 0.01,
+        min_gain: float = 0.03,
         drop_threshold: float = 0.10,
+        gate_margin: float = 0.02,
+        free_min_tail: float = 0.30,
         max_active_features: int = 12,
         top_k_candidates: int = 128,
         random_state: int = 0,
@@ -128,6 +137,8 @@ class SafePoolGAM:
         self.envelope_margin = envelope_margin
         self.min_gain = min_gain
         self.drop_threshold = drop_threshold
+        self.gate_margin = gate_margin
+        self.free_min_tail = free_min_tail
         self.max_active_features = max_active_features
         self.top_k_candidates = top_k_candidates
         self.random_state = random_state
@@ -343,40 +354,144 @@ class SafePoolGAM:
                     if self.verbose:
                         print(f"  pruned feature {j_worst} (frontier)")
 
-        # Extrapolation gates: keep the free extension beyond the
-        # training range only if it beats the clipped (flat) extension
-        # on the tail slices — the closest in-sample proxy for
-        # out-of-range behaviour.
-        for j in active:
-            c = comp[j]
-            if c.kind == "dropped" or pools[j] is None:
-                continue
-            if c.kind == "linear":
-                c.gate_free = True
-                continue
-            uj = U_s[:, j]
-            tail = tails[j]
-            if tail.sum() < 8:
-                c.gate_free = False
-                continue
-            r = y_s - bias - contrib.sum(axis=1) + contrib[:, j]
-            inner_lo = float(uj[~tail].min())
-            inner_hi = float(uj[~tail].max())
-            free_vals = _shape_values(c.kind, c.param, c.nested, pools[j], uj)
-            clip_vals = _shape_values(
-                c.kind, c.param, c.nested, pools[j],
-                np.clip(uj, inner_lo, inner_hi),
+        # Extrapolation gates, decided on ALL rows with the full
+        # additive model: feature j keeps its free extension beyond the
+        # training range only if (i) its shape was strongly
+        # tail-validated during selection and (ii) the full model with
+        # j free beats the full model with j clipped by ``gate_margin``
+        # on j's full-data tail slice. Borderline cases default to the
+        # clipped (flat, tree-like) extension — conservatism is the
+        # point.
+        def _predict_variant(U_var: np.ndarray, gates: list[bool],
+                             fit_mask: np.ndarray) -> np.ndarray:
+            for jj, c2 in enumerate(comp):
+                c2.gate_free = gates[jj]
+            Phi_g = self._design_matrix(U_var)
+            w_g, *_ = np.linalg.lstsq(
+                Phi_g[fit_mask], y[fit_mask], rcond=None
             )
-            free_score, _ = self._tail_score(free_vals, r, ~tail, tail)
-            clip_score, _ = self._tail_score(clip_vals, r, ~tail, tail)
-            c.gate_free = bool(free_score >= clip_score)
+            return Phi_g @ w_g
 
-        # Final joint refit on ALL rows (gates applied).
-        Phi = self._design_matrix(U)
-        lam = 1e-8 * Phi.shape[0]
-        A = Phi.T @ Phi + lam * np.eye(Phi.shape[1])
-        b = Phi.T @ y
-        self._weights = np.linalg.solve(A, b)
+        gates = [False for _ in comp]
+        candidates_free = [
+            j for j in active
+            if comp[j].kind != "dropped"
+            and pools[j] is not None
+            and comp[j].tail_r2 >= self.free_min_tail
+        ]
+        for j in candidates_free:
+            uj_full = U[:, j]
+            lo_q = np.quantile(uj_full, self.tail_quantile)
+            hi_q = np.quantile(uj_full, 1.0 - self.tail_quantile)
+            tail_full = (uj_full <= lo_q) | (uj_full >= hi_q)
+            inner_full = ~tail_full
+            if tail_full.sum() < 12 or inner_full.sum() < 24:
+                continue
+            # Simulate flat-beyond-inner-range behaviour for feature j
+            # and let both variants predict j's actual tail data from a
+            # fit on the inner rows only.
+            g = list(gates)
+            g[j] = True
+            U_clipped = U.copy()
+            U_clipped[:, j] = np.clip(
+                uj_full, float(uj_full[inner_full].min()),
+                float(uj_full[inner_full].max()),
+            )
+            pred_free = _predict_variant(U, g, inner_full)
+            pred_clip = _predict_variant(U_clipped, g, inner_full)
+            ss_tot = np.sum((y[tail_full] - y[tail_full].mean()) ** 2)
+            if ss_tot < 1e-16:
+                continue
+            r2_free = 1 - np.sum((y[tail_full] - pred_free[tail_full]) ** 2) / ss_tot
+            r2_clip = 1 - np.sum((y[tail_full] - pred_clip[tail_full]) ** 2) / ss_tot
+            if r2_free >= r2_clip + self.gate_margin:
+                gates[j] = True
+
+        for jj, c2 in enumerate(comp):
+            c2.gate_free = gates[jj]
+
+        # Frontier model selection: the symbolic model must *earn* its
+        # deployment by beating plain linear regression and the
+        # constant predictor on the extrapolation frontier (union of
+        # all feature tails), each scored with weights fit on the inner
+        # rows only. Whichever family wins is refit on all rows. This
+        # is the final never-catastrophic guarantee: when no closed
+        # form certifies, the model degrades to linear or to the mean
+        # — never to a confidently wrong formula.
+        def tails_of(js: list[int]) -> np.ndarray:
+            mask = np.zeros(n, dtype=bool)
+            for j2 in js:
+                ujf = U[:, j2]
+                if np.std(ujf) < 1e-12:
+                    continue
+                lo_q = np.quantile(ujf, self.tail_quantile)
+                hi_q = np.quantile(ujf, 1.0 - self.tail_quantile)
+                mask |= (ujf <= lo_q) | (ujf >= hi_q)
+            return mask
+
+        frontier_full = tails_of(active)
+        if (~frontier_full).sum() < 24 and len(active) > 1:
+            # The union of every feature's tails swallowed the data set;
+            # fall back to the tails of the strongest single feature.
+            yc_all = y - y.mean()
+            strength = []
+            for j2 in active:
+                s2 = np.std(U[:, j2])
+                strength.append(
+                    0.0 if s2 < 1e-12
+                    else abs(np.mean((U[:, j2] - U[:, j2].mean()) * yc_all)) / s2
+                )
+            top = active[int(np.argmax(strength))]
+            frontier_full = tails_of([top])
+        inner_rows = ~frontier_full
+        self.model_family_ = "symbolic"
+        if frontier_full.sum() >= 12 and inner_rows.sum() >= 24:
+            Phi_sym = self._design_matrix(U)
+            U_boxed = np.clip(U, U_LO, U_HI)
+            X_lin = np.column_stack([np.ones(n), U_boxed])
+
+            def frontier_score(Phi_m: np.ndarray) -> float:
+                w_m, *_ = np.linalg.lstsq(
+                    Phi_m[inner_rows], y[inner_rows], rcond=None
+                )
+                pred = Phi_m[frontier_full] @ w_m
+                ss_tot = np.sum(
+                    (y[frontier_full] - y[frontier_full].mean()) ** 2
+                )
+                if ss_tot < 1e-16:
+                    return 0.0
+                return 1.0 - np.sum((y[frontier_full] - pred) ** 2) / ss_tot
+
+            s_sym = frontier_score(Phi_sym)
+            s_lin = frontier_score(X_lin)
+            s_const = 0.0  # the constant predictor scores R^2 = 0 - eps
+            # Symbolic keeps deployment unless a structurally-flat
+            # challenger beats it by a clear margin. Every challenger
+            # is flat beyond the training box by construction — raw
+            # unbounded linear extrapolation is never deployed blind.
+            best_family = "symbolic"
+            if s_lin > max(s_sym, s_const) + 0.02:
+                best_family = "linear"
+            elif s_const > s_sym + 0.02:
+                best_family = "mean"
+            self.model_family_ = best_family
+            self.frontier_scores_ = {
+                "symbolic": s_sym, "linear": s_lin, "mean": s_const,
+            }
+
+        # Deploy the winning family, refit on ALL rows.
+        if self.model_family_ == "symbolic":
+            Phi = self._design_matrix(U)
+            lam = 1e-8 * Phi.shape[0]
+            self._weights = np.linalg.solve(
+                Phi.T @ Phi + lam * np.eye(Phi.shape[1]), Phi.T @ y
+            )
+        elif self.model_family_ == "linear":
+            U_boxed = np.clip(U, U_LO, U_HI)
+            X_lin = np.column_stack([np.ones(n), U_boxed])
+            self._lin_weights, *_ = np.linalg.lstsq(X_lin, y, rcond=None)
+        else:
+            self._mean_value = float(y.mean())
         self.fit_seconds_ = time.time() - t_start
         return self
 
@@ -400,21 +515,27 @@ class SafePoolGAM:
         return 1.0 - ss_res / ss_tot, fitted
 
     @staticmethod
-    def _both_sides_ok(fitted, r, u, tail, floor: float = -0.05) -> bool:
-        """A shape must not be actively harmful on either tail side
-        separately (junk shapes often look fine on the combined tails
-        while being wrong on one side)."""
+    def _both_sides_ok(fitted, r, u, tail, tol: float = 1.10) -> bool:
+        """A shape must not be *worse than its own absence* on either
+        tail side separately (junk shapes often look fine on the
+        combined tails while bending the wrong way on one side).
+
+        The comparison is against the no-component prediction (zero
+        residual contribution), not against the side's own mean — a
+        side-mean constant is an oracle fitted on the very slice being
+        scored, and rejecting shapes for losing to it vetoes perfectly
+        good components whenever the slice's residual variance is
+        dominated by other features' noise.
+        """
         if not tail.any():
             return True
         med = np.median(u)
         for side in (tail & (u <= med), tail & (u > med)):
             if side.sum() < 4:
                 continue
-            ss_tot = np.sum((r[side] - r[side].mean()) ** 2)
-            if ss_tot < 1e-16:
-                continue
-            r2 = 1.0 - np.sum((r[side] - fitted[side]) ** 2) / ss_tot
-            if r2 < floor:
+            ss_shape = np.sum((r[side] - fitted[side]) ** 2)
+            ss_none = np.sum(r[side] ** 2)
+            if ss_shape > tol * ss_none + 1e-12:
                 return False
         return True
 
@@ -454,7 +575,16 @@ class SafePoolGAM:
     def predict(self, X) -> np.ndarray:
         X = np.asarray(X, dtype=np.float64)
         U = self._to_canonical(X)
-        yhat = self._design_matrix(U) @ self._weights
+        family = getattr(self, "model_family_", "symbolic")
+        if family == "symbolic":
+            yhat = self._design_matrix(U) @ self._weights
+        elif family == "linear":
+            U_boxed = np.clip(U, U_LO, U_HI)
+            yhat = np.column_stack(
+                [np.ones(U_boxed.shape[0]), U_boxed]
+            ) @ self._lin_weights
+        else:
+            yhat = np.full(U.shape[0], self._mean_value)
         span = self._y_hi - self._y_lo
         m = self.envelope_margin * max(span, 1e-12)
         return np.clip(yhat, self._y_lo - m, self._y_hi + m)
@@ -468,6 +598,12 @@ class SafePoolGAM:
             f"x{j+1}" for j in range(len(self.components_))
         ]
         out = {}
+        family = getattr(self, "model_family_", "symbolic")
+        if family != "symbolic":
+            return {"__deployed__": {
+                "expr": family, "gate": "n/a",
+                "tail_r2": float("nan"),
+            }}
         for j, c in enumerate(self.components_):
             w = float(self._weights[1 + j])
             if c.kind == "dropped" or abs(w) < 1e-12:

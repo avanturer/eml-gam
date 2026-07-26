@@ -1,0 +1,173 @@
+{
+  "protocol": {
+    "grid_seed": 12345,
+    "n_grid": 320,
+    "x_range": [
+      0.3,
+      2.5
+    ],
+    "rel_tol": 1e-06,
+    "n_targets": 40,
+    "pool_build_seconds": 42.22876691818237,
+    "pool_sizes": [
+      2,
+      6,
+      38,
+      1180,
+      614773
+    ],
+    "pool_build_stats": [
+      {
+        "level": 1,
+        "n_candidate_pairs": 4,
+        "pool_size": 6,
+        "new_entries": 4,
+        "syntactic_live": 4,
+        "syntactic_snaps": 4,
+        "seconds": 0.0005478858947753906
+      },
+      {
+        "level": 2,
+        "n_candidate_pairs": 36,
+        "pool_size": 38,
+        "new_entries": 32,
+        "syntactic_live": 36,
+        "syntactic_snaps": 144,
+        "seconds": 0.0011830329895019531
+      },
+      {
+        "level": 3,
+        "n_candidate_pairs": 1444,
+        "pool_size": 1180,
+        "new_entries": 1142,
+        "syntactic_live": 1444,
+        "syntactic_snaps": 186624,
+        "seconds": 0.06945443153381348
+      },
+      {
+        "level": 4,
+        "n_candidate_pairs": 1392400,
+        "pool_size": 614773,
+        "new_entries": 613593,
+        "syntactic_live": 2090916,
+        "syntactic_snaps": 313456656384,
+        "seconds": 42.14357829093933
+      }
+    ]
+  },
+  "depths": {
+    "3": {
+      "target_stats": {
+        "n_sampled": 49,
+        "n_degenerate": 2,
+        "n_collapsed_to_shallower": 7,
+        "n_critical": 40,
+        "critical_fraction": 0.8163265306122449
+      },
+      "syntactic_snaps": 186624,
+      "syntactic_live": 1444,
+      "pool": {
+        "n": 40,
+        "recovered": 40,
+        "mean_seconds": 0.0008114278316497803,
+        "max_seconds": 0.0013577938079833984
+      },
+      "gd": {
+        "n": 8,
+        "recovered": 1,
+        "mse_success": 4,
+        "mean_seconds": 16.486565738916397
+      },
+      "uniform": {
+        "n": 8,
+        "recovered": 6,
+        "budget": 30000,
+        "mean_seconds": 12.66388064622879
+      }
+    },
+    "4": {
+      "target_stats": {
+        "n_sampled": 54,
+        "n_degenerate": 6,
+        "n_collapsed_to_shallower": 8,
+        "n_critical": 40,
+        "critical_fraction": 0.7407407407407407
+      },
+      "syntactic_snaps": 313456656384,
+      "syntactic_live": 2090916,
+      "pool": {
+        "n": 40,
+        "recovered": 40,
+        "mean_seconds": 0.031078749895095827,
+        "max_seconds": 0.10798239707946777
+      },
+      "gd": {
+        "n": 8,
+        "recovered": 1,
+        "mse_success": 1,
+        "mean_seconds": 21.23650360107422
+      },
+      "uniform": {
+        "n": 8,
+        "recovered": 4,
+        "budget": 30000,
+        "mean_seconds": 21.775965213775635
+      }
+    },
+    "5": {
+      "target_stats": {
+        "n_sampled": 66,
+        "n_degenerate": 5,
+        "n_collapsed_to_shallower": 21,
+        "n_critical": 40,
+        "critical_fraction": 0.6060606060606061
+      },
+      "syntactic_snaps": 884295678882933431599104,
+      "syntactic_live": 4371938082724,
+      "pool": {
+        "n": 40,
+        "recovered": 36,
+        "mean_seconds": 22.86854205727577,
+        "max_seconds": 75.36291217803955
+      },
+      "gd": {
+        "n": 8,
+        "recovered": 0,
+        "mse_success": 2,
+        "mean_seconds": 25.02219071984291
+      },
+      "uniform": {
+        "n": 8,
+        "recovered": 1,
+        "budget": 30000,
+        "mean_seconds": 34.8316924571991
+      }
+    }
+  },
+  "coverage": {
+    "6": {
+      "n_sampled": 34,
+      "n_degenerate": 4,
+      "n_valid": 30,
+      "n_recovered_via_depth5_solver": 14,
+      "coverage_fraction": 0.4666666666666667,
+      "mean_seconds": 20.161701591809592
+    },
+    "7": {
+      "n_sampled": 32,
+      "n_degenerate": 2,
+      "n_valid": 30,
+      "n_recovered_via_depth5_solver": 6,
+      "coverage_fraction": 0.2,
+      "mean_seconds": 21.91992708047231
+    },
+    "8": {
+      "n_sampled": 36,
+      "n_degenerate": 6,
+      "n_valid": 30,
+      "n_recovered_via_depth5_solver": 4,
+      "coverage_fraction": 0.13333333333333333,
+      "mean_seconds": 21.75860153834025
+    }
+  }
+}
