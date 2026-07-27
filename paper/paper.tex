@@ -48,11 +48,19 @@ inversion}: $y=\exp(\mathrm{clip}(a))-\ln(\mathrm{clamp}(b))$ implies
 $\mathrm{clip}(a)=\ln(y+\ln \mathrm{clamp}(b))$, so each candidate $b$
 yields a hash lookup for $a$. On depth-critical random targets
 (provably not representable one level shallower) verified exact
-recovery is $40/40$, $40/40$ and $36/40$ at depths 3, 4, 5 — at
-0.00\,s, 0.03\,s and 23\,s per target — versus at most $1/8$ for
+recovery is $40/40$, $40/40$ and $38/40$ at depths 3, 4, 5 at the
+default budget — 0.00\,s, 0.03\,s and 28\,s per target — and
+$\mathbf{40/40}$ at depth 5 including the final escalation rung
+(unranked streamed verification of every generated candidate pair; the
+two hardest targets fall after 12M and 42M verified pairs) — versus at
+most $1/8$ for
 multi-start Adam at any depth ($0/8$ at depth 5); uniform syntactic
 sampling survives at depths 3--4 on syntactically abundant targets
 (itself a corollary of the collapse) and drops to $1/8$ at depth 5.
+The machinery is operator-generic: repeated verbatim for
+$\psi=\sinh-\operatorname{arsinh}$ — the harder enumeration case,
+whose unclamped pool is $2.3\times$ larger — verified recovery is
+$20/20$ at every depth 3--5.
 The source paper's own bivariate showcase
 $\ln(e-\ln(e^x-\ln y))$ — depth 5, the very family on which its
 ${>}1000$ gradient runs plateaued — is recovered exactly in $10.7$ s.
@@ -301,7 +309,7 @@ depth & syntactic snaps & pool (this work) & gradient descent & uniform 30k \\
 \midrule
 3 & $1.9\times10^{5}$  & \textbf{40/40} \,(0.00 s) & 1/8 \,(4 MSE-hits) & 6/8 \\
 4 & $3.1\times10^{11}$ & \textbf{40/40} \,(0.03 s) & 1/8 \,(1 MSE-hit) & 4/8 \\
-5 & $8.8\times10^{23}$ & \textbf{36/40} \,(23 s)   & 0/8 \,(2 MSE-hits) & 1/8 \\
+5 & $8.8\times10^{23}$ & \textbf{38/40} \,(28 s)   & 0/8 \,(2 MSE-hits) & 1/8 \\
 \bottomrule
 \end{tabular}
 \caption{Verified exact recovery on depth-critical random targets (40
@@ -312,11 +320,37 @@ with the wrong formula and are rejected by dense verification — the
 gap unverified recovery claims hide. Uniform sampling is effective at
 depths 3--4 because dead slots give small live trees millions of
 syntactic realisations (a corollary of the collapse, not a
-contradiction); it dies at depth 5. The pool's four depth-5 misses
-exhaust the default 300k-candidate/300 s budget in clamp-degenerate
-mega-run regimes and are reported as explicit failures.}
+contradiction); it dies at depth 5. The two default-budget depth-5 misses are fully
+characterised (their correct pairs rank deep inside clamp-degenerate
+match classes) and both fall to the ladder's last rung — unranked
+streamed verification of every generated pair, no caps — after 11.7M
+(164 s) and 42.3M (557 s) verified candidates: depth-5 recovery is
+40/40 with the full ladder, and no unexplained failure remains at any
+depth.}
 \label{tab:recovery}
 \end{table}
+
+Wilson 95\% intervals for the headline proportions: $40/40 \to
+[91.2\%, 100\%]$ and $38/40 \to [83.5\%, 98.6\%]$; the gap to the
+baselines (at most $1/8$) is far outside any overlap. The escalation
+ladder — ranked default, extended caps with multi-resolution
+matching, then unranked streamed verification — completes depth-5
+recovery to $40/40$, with each rung's budget and outcome recorded in
+\texttt{depth\_wall\_results.json}.
+
+\paragraph{Operator generality.} The pool machinery touches the
+operator only through node evaluation and the two side
+canonicalisations, so the identical pipeline runs verbatim on
+$\psi(x,y)=\sinh(x)-\operatorname{arsinh}(y)$ — the \emph{harder}
+enumeration case: with no clamps there is no functional collapse
+(level-3 pool $=$ all $1\,444$ live trees; level-4 pool
+$1\,431\,542$, $2.3\times$ EML's), and root inversion is exact
+($a=\operatorname{arsinh}(y+\operatorname{arsinh} b)$).
+Depth-critical verified recovery is $\mathbf{20/20}$ at each of
+depths 3, 4, 5 (0.00\,s, 0.01\,s, 39.5\,s per target), and zero
+random $\psi$ targets collapse to shallower functions — no
+degeneracy means every sampled tree is genuinely depth-critical
+(\texttt{psi\_depth\_wall\_results.json}).
 
 Beyond the enumerated range we measure \emph{coverage}: the fraction
 of unfiltered random depth-6/7/8 targets recovered by the depth-5
@@ -526,23 +560,51 @@ relation.
 
 \section{Related work}
 
-Universal-operator representations trace to the exp-log reductions
-and Euler's formula; the single-operator endpoint is
-Odrzywo{\l}ek's~\cite{odrzywolek2026eml}. Symbolic regression by
-continuous relaxation (Gumbel-softmax program induction), by
-risk-seeking policy gradients (DSR~\cite{petersen2021dsr}), by
-genetic programming (PySR~\cite{cranmer2023pysr}), and by pretrained
-transformers (NeSymReS / end-to-end SR) all search syntax
-stochastically; our results show that for single-operator grammars
-with clamped semantics the function space itself is enumerable, which
-subsumes search below the enumeration horizon and reduces it to
-residual inversion above. Additive models with shape constraints
-(GA$^2$M/EBM~\cite{lou2013accurate}) provide the deployment scaffold;
-SafePoolGAM inherits their structure while replacing spline shapes
-with certified closed forms. Meet-in-the-middle inversion is classic
-in cryptanalysis and program synthesis (inverse semantics /
-bidirectional search); its application to an SR operator's root node
-appears to be new.
+\paragraph{Single-operator representations.} Universal-operator
+reductions trace through logarithm tables, the exp--log
+representation, and Euler's formula; the single-binary-operator
+endpoint is Odrzywo{\l}ek's discovery~\cite{odrzywolek2026eml}, which
+also frames the trainable master-formula architecture and reports the
+depth wall we study.
+
+\paragraph{Symbolic regression.} Modern SR searches syntax
+stochastically: genetic programming (Eureqa~\cite{schmidt2009},
+PySR~\cite{cranmer2023pysr}), risk-seeking policy gradients
+(DSR~\cite{petersen2021dsr}), continuous relaxation via
+Gumbel-softmax~\cite{jang2017gumbel}, physics-inspired decomposition
+(AI Feynman~\cite{udrescu2020feynman}), and pretrained transformers
+(NeSymReS~\cite{biggio2021}, end-to-end
+SR~\cite{kamienny2022}). SRBench~\cite{lacava2021} standardises the
+empirical comparison, and SR over unrestricted grammars is NP-hard in
+general~\cite{virgolin2022}. Our results carve out a regime where
+search is unnecessary: for single-operator grammars under the clamped
+semantics that any trainable implementation must adopt, the reachable
+function space is small enough to enumerate outright, which subsumes
+stochastic search below the enumeration horizon and reduces it to
+residual inversion above.
+
+\paragraph{Enumerative program synthesis.} Bottom-up enumeration with
+observational-equivalence pruning is a core technique in program
+synthesis — TRANSIT~\cite{udupa2013}, recursive synthesis with
+equivalence reduction~\cite{albarghouthi2013}, and the enumerative
+solvers of the SyGuS competition~\cite{alur2013}. Our contribution is
+not the enumeration schema but (i) the \emph{measurement} that a
+trainable SR architecture's function space collapses by five-plus
+orders of magnitude under its own numerical semantics, (ii) the
+identification of that collapse with the optimiser-killing clamp
+saturation (the wall's cause and cure coincide), (iii) the
+$O(\text{pool})$ analytic \emph{root inversion} — a meet-in-the-middle
+step in the spirit of cryptanalytic time--memory
+trade-offs~\cite{diffie1977} — with informativeness-ranked matching,
+and (iv) verification-gated recovery with certificates on failure as
+well as success.
+
+\paragraph{Deployable additive models.} GA$^2$M/EBM~\cite{lou2013accurate}
+provides the additive scaffold and the flat-beyond-range behaviour
+that SafePoolGAM adopts as its fallback; SafePoolGAM replaces spline
+shapes with closed forms from a complete atlas and adds
+tail-certified extrapolation gates, which no tree-based additive
+model can offer.
 
 \section{Limitations}
 
@@ -573,21 +635,52 @@ the recipe — enumerate the reachable semantics under the numerics
 actually used, dedupe, invert the outermost operator — applies well
 beyond EML.
 
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
 \bibitem{odrzywolek2026eml} A.~Odrzywo{\l}ek.
 \emph{All elementary functions from a single operator}.
 arXiv:2603.21852, 2026.
 \bibitem{lou2013accurate} Y.~Lou, R.~Caruana, J.~Gehrke, G.~Hooker.
 \emph{Accurate intelligible models with pairwise interactions}. KDD 2013.
 \bibitem{cranmer2023pysr} M.~Cranmer.
-\emph{Interpretable machine learning for science with PySR}. arXiv:2305.01582, 2023.
-\bibitem{petersen2021dsr} B.~Petersen et al.
-\emph{Deep symbolic regression}. ICLR 2021.
+\emph{Interpretable machine learning for science with PySR and
+SymbolicRegression.jl}. arXiv:2305.01582, 2023.
+\bibitem{petersen2021dsr} B.~K.~Petersen, M.~Landajuela, T.~N.~Mundhenk,
+C.~P.~Santiago, S.~Kim, J.~T.~Kim.
+\emph{Deep symbolic regression: recovering mathematical expressions
+from data via risk-seeking policy gradients}. ICLR 2021.
 \bibitem{jang2017gumbel} E.~Jang, S.~Gu, B.~Poole.
 \emph{Categorical reparameterization with Gumbel-softmax}. ICLR 2017.
-\bibitem{ax1971} J.~Ax. \emph{On Schanuel's conjectures}. Ann.\ of Math.\ 93 (1971).
+\bibitem{ax1971} J.~Ax. \emph{On Schanuel's conjectures}. Annals of
+Mathematics 93:252--268, 1971.
 \bibitem{udrescu2020feynman} S.-M.~Udrescu, M.~Tegmark.
-\emph{AI Feynman}. Science Advances, 2020.
+\emph{AI Feynman: a physics-inspired method for symbolic regression}.
+Science Advances 6(16), 2020.
+\bibitem{schmidt2009} M.~Schmidt, H.~Lipson.
+\emph{Distilling free-form natural laws from experimental data}.
+Science 324(5923):81--85, 2009.
+\bibitem{biggio2021} L.~Biggio, T.~Bendinelli, A.~Neitz, A.~Lucchi,
+G.~Parascandolo. \emph{Neural symbolic regression that scales}.
+ICML 2021.
+\bibitem{kamienny2022} P.-A.~Kamienny, S.~d'Ascoli, G.~Lample,
+F.~Charton. \emph{End-to-end symbolic regression with transformers}.
+NeurIPS 2022.
+\bibitem{lacava2021} W.~La~Cava, P.~Orzechowski, B.~Burlacu,
+F.~O.~de~Fran\c{c}a, M.~Virgolin, Y.~Jin, M.~Kommenda, J.~H.~Moore.
+\emph{Contemporary symbolic regression methods and their relative
+performance}. NeurIPS Datasets and Benchmarks 2021.
+\bibitem{virgolin2022} M.~Virgolin, S.~P.~Pissis.
+\emph{Symbolic regression is NP-hard}. TMLR, 2022.
+\bibitem{udupa2013} A.~Udupa, A.~Raghavan, J.~V.~Deshmukh,
+S.~Mador-Haim, M.~M.~K.~Martin, R.~Alur.
+\emph{TRANSIT: specifying protocols with concolic snippets}. PLDI 2013.
+\bibitem{albarghouthi2013} A.~Albarghouthi, S.~Gulwani, Z.~Kincaid.
+\emph{Recursive program synthesis}. CAV 2013.
+\bibitem{alur2013} R.~Alur, R.~Bod\'ik, G.~Juniwal, M.~M.~K.~Martin,
+M.~Raghothaman, S.~A.~Seshia, R.~Singh, A.~Solar-Lezama, E.~Torlak,
+A.~Udupa. \emph{Syntax-guided synthesis}. FMCAD 2013.
+\bibitem{diffie1977} W.~Diffie, M.~E.~Hellman.
+\emph{Exhaustive cryptanalysis of the NBS Data Encryption Standard}.
+Computer 10(6):74--84, 1977.
 \end{thebibliography}
 
 \end{document}

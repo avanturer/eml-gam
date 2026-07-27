@@ -42,3 +42,9 @@ data/*.xlsx
 !data/.gitkeep
 # PySR run artefacts (Julia checkpoints, hall-of-fame dumps)
 outputs/
+
+# LaTeX build artifacts (paper.pdf itself is tracked as a deliverable)
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.toc

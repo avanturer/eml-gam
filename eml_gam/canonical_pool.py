@@ -216,9 +216,17 @@ class FunctionPool:
     # reported results. Hashes keep the dedup index at 8 bytes per
     # entry instead of ``8 * n_points``.
 
-    def _hash_rows(self, rows: np.ndarray) -> np.ndarray:
-        """Vectorised 64-bit hash of quantised rows. ``rows`` is (M, N)."""
-        scale = 10.0**self.decimals
+    def _hash_rows(
+        self, rows: np.ndarray, decimals: Optional[int] = None
+    ) -> np.ndarray:
+        """Vectorised 64-bit hash of quantised rows. ``rows`` is (M, N).
+
+        ``decimals`` overrides the pool's dedup precision — coarser
+        matching absorbs larger inversion round-off (multi-resolution
+        lookup); any false positives it admits are removed by the
+        mandatory dense-grid verification downstream.
+        """
+        scale = 10.0 ** (self.decimals if decimals is None else decimals)
         q = np.round(rows * scale)
         # Saturate to the int64-representable range; non-finite rows are
         # the caller's responsibility (masked before/after).
@@ -533,20 +541,35 @@ class FunctionPool:
 
     _MISS_SENTINEL = np.int64(-0x6E3A_1B2C_4D5E_6F70)
 
-    def _side_index(self, k: int, side: str) -> tuple[np.ndarray, np.ndarray]:
+    def _side_index(
+        self, k: int, side: str, decimals: Optional[int] = None
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Sorted 64-bit-hash index of side-canonicalised pool vectors at
-        depth budget ``<= k``. Cached. Returns ``(sorted_hashes, order)``
-        with ``order`` mapping sorted position -> pool entry index."""
+        depth budget ``<= k`` and matching precision ``decimals``
+        (default: the pool's dedup precision). Cached. Returns
+        ``(sorted_hashes, order)`` with ``order`` mapping sorted
+        position -> pool entry index."""
         cache = getattr(self, "_side_cache", None)
         if cache is None:
             cache = self._side_cache = {}
-        key = (k, side)
+        key = (k, side, decimals)
         if key not in cache:
             vecs = self.stacked_vecs(k)
-            canon = (
-                self._exp_canon(vecs) if side == "exp" else self._log_canon(vecs)
-            )
-            hashes = self._hash_rows(canon)
+            M = vecs.shape[0]
+            hashes = np.empty(M, dtype=np.int64)
+            # Chunked: hashing materialises a rounded copy and an int64
+            # copy of its input; on multi-million-entry pools doing the
+            # whole matrix at once triples peak memory.
+            step = 200_000
+            for r0 in range(0, M, step):
+                r1 = min(r0 + step, M)
+                chunk = vecs[r0:r1]
+                canon = (
+                    self._exp_canon(chunk)
+                    if side == "exp"
+                    else self._log_canon(chunk)
+                )
+                hashes[r0:r1] = self._hash_rows(canon, decimals=decimals)
             order = np.argsort(hashes, kind="stable")
             cache[key] = (hashes[order], order)
         return cache[key]
@@ -591,7 +614,12 @@ class FunctionPool:
         return cache[k]
 
     def match_row_runs(
-        self, rows: np.ndarray, k: int, side: str, per_run_cap: int = 32
+        self,
+        rows: np.ndarray,
+        k: int,
+        side: str,
+        per_run_cap: int = 32,
+        decimals: Optional[int] = None,
     ) -> list[tuple[int, list[int]]]:
         """Like :meth:`match_rows` but returns *every* pool entry whose
         side-canonical vector matches, as ``(row_index, [entry ids])``.
@@ -600,13 +628,14 @@ class FunctionPool:
         ``max(., EPS)`` for the log side), so distinct pool functions
         can agree exactly on what the parent node sees. All of them are
         legitimate reconstruction candidates; runs are ranked by
-        expression size and truncated at ``per_run_cap``.
+        expression size and truncated at ``per_run_cap``. ``decimals``
+        selects the matching precision (multi-resolution lookup).
         """
-        sorted_hashes, order = self._side_index(k, side)
+        sorted_hashes, order = self._side_index(k, side, decimals=decimals)
         sizes = self.sizes_array(k)
         finite = np.all(np.isfinite(rows), axis=1)
         safe_rows = np.where(finite[:, None], rows, 0.0)
-        targets = self._hash_rows(safe_rows)
+        targets = self._hash_rows(safe_rows, decimals=decimals)
         targets[~finite] = self._MISS_SENTINEL
         lo = np.searchsorted(sorted_hashes, targets, side="left")
         hi = np.searchsorted(sorted_hashes, targets, side="right")
@@ -701,6 +730,7 @@ class FunctionPool:
         cap: int = 100_000,
         row_chunk: int = 65_536,
         per_run_cap: int = 32,
+        match_decimals: Optional[tuple] = None,
     ) -> list[tuple[int, int]]:
         """Pair-index form of :meth:`lookup_root` — no expression
         expansion, suitable for streaming verification of large match
@@ -713,48 +743,87 @@ class FunctionPool:
         certificate, while hits inside huge saturated runs (thousands
         of clamp-degenerate entries agreeing on what the root sees) are
         low-information and verified last.
+
+        ``match_decimals`` selects the matching precisions, finest
+        first (default: the pool's dedup precision only). Analytic
+        inversion of the root suffers catastrophic cancellation on
+        targets with extreme dynamic range — the implied child can be
+        off by more than half an 8-decimal quantum even though the pair
+        is exactly right — so a coarser second resolution recovers
+        those matches; the false positives coarse matching admits are
+        removed by the caller's dense-grid verification.
         """
         y = np.asarray(y, dtype=np.float64)
         k = depth - 1
         vecs = self.stacked_vecs(k)
         M = vecs.shape[0]
-        pass_cap = cap
-        pairs: dict[tuple[int, int], int] = {}
+        pairs: dict[tuple[int, int], tuple[int, int]] = {}
+        resolutions = (
+            (self.decimals,) if match_decimals is None else tuple(match_decimals)
+        )
+        # Row enumeration is NEVER truncated — a cap that stops the scan
+        # can cut it before the row that carries the true pair, and no
+        # amount of ranking can rank a pair that was never generated.
+        # The combinatorial explosion is throttled at the source
+        # instead: hits inside mega-runs (run length > 1000, the
+        # clamp-degenerate classes whose individual members carry
+        # almost no information) contribute only their few smallest
+        # members; the hard_max valve then only ever bites on
+        # pathological targets, and only for mega-run hits.
+        hard_max = max(cap * 8, 2_000_000)
+        mega_members = 4
 
-        def note(pair: tuple[int, int], run_len: int) -> None:
+        def note(pair: tuple[int, int], run_len: int, res_rank: int) -> None:
             old = pairs.get(pair)
-            if old is None or run_len < old:
-                pairs[pair] = run_len
+            new = (res_rank, run_len)
+            if old is None or new < old:
+                pairs[pair] = new
 
-        n0 = 0
-        for r0 in range(0, M, row_chunk):
-            if len(pairs) - n0 >= pass_cap:
-                break
-            r1 = min(r0 + row_chunk, M)
-            a_implied, valid_b = self.implied_exp_children(y, vecs[r0:r1])
-            a_implied[~valid_b] = np.nan
-            for off, members, run_len in self.match_row_runs(
-                a_implied, k, "exp", per_run_cap=per_run_cap
-            ):
-                for ia in members:
-                    note((ia, r0 + off), run_len)
+        for res_rank, dec in enumerate(resolutions):
+            for r0 in range(0, M, row_chunk):
+                r1 = min(r0 + row_chunk, M)
+                a_implied, valid_b = self.implied_exp_children(y, vecs[r0:r1])
+                a_implied[~valid_b] = np.nan
+                for off, members, run_len in self.match_row_runs(
+                    a_implied, k, "exp", per_run_cap=per_run_cap, decimals=dec
+                ):
+                    keep = (
+                        members
+                        if run_len <= 1000 or len(pairs) < hard_max
+                        else members[:mega_members]
+                    )
+                    for ia in keep:
+                        note((ia, r0 + off), run_len, res_rank)
 
-        n0 = len(pairs)
-        for r0 in range(0, M, row_chunk):
-            if len(pairs) - n0 >= pass_cap:
-                break
-            r1 = min(r0 + row_chunk, M)
-            b_implied, valid_a = self.implied_log_children(y, vecs[r0:r1])
-            b_implied[~valid_a] = np.nan
-            for off, members, run_len in self.match_row_runs(
-                b_implied, k, "log", per_run_cap=per_run_cap
-            ):
-                for ib in members:
-                    note((r0 + off, ib), run_len)
+            for r0 in range(0, M, row_chunk):
+                r1 = min(r0 + row_chunk, M)
+                b_implied, valid_a = self.implied_log_children(y, vecs[r0:r1])
+                b_implied[~valid_a] = np.nan
+                for off, members, run_len in self.match_row_runs(
+                    b_implied, k, "log", per_run_cap=per_run_cap, decimals=dec
+                ):
+                    keep = (
+                        members
+                        if run_len <= 1000 or len(pairs) < hard_max
+                        else members[:mega_members]
+                    )
+                    for ib in keep:
+                        note((r0 + off, ib), run_len, res_rank)
 
         sizes = self.sizes_array(k)
+        # Run lengths are clamped into a single "mega-run" tier before
+        # ranking: beyond ~10^3 the run length carries no additional
+        # information, and letting raw lengths dominate would sort a
+        # small correct pair inside a 10^5-member saturated run behind
+        # millions of junk pairs from moderately-sized runs — past the
+        # cap, i.e. lost. Inside a tier the Occam size prior decides.
         ranked = sorted(
-            pairs, key=lambda p: (pairs[p], sizes[p[0]] + sizes[p[1]])
+            pairs,
+            key=lambda p: (
+                pairs[p][0],
+                min(pairs[p][1], 1000),
+                sizes[p[0]] + sizes[p[1]],
+            ),
         )
         return ranked[:cap]
 

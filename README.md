@@ -68,7 +68,17 @@ to 1e−6):
 |------:|----------------:|:--------------:|:-----------------------------:|:----------------------:|
 | 3 | 1.9×10⁵ | **40/40** (0.00 s) | 1/8 (4 MSE-hits) | 6/8 |
 | 4 | 3.1×10¹¹ | **40/40** (0.03 s) | 1/8 (1 MSE-hit) | 4/8 |
-| 5 | 8.8×10²³ | **36/40** (23 s avg) | 0/8 (2 MSE-hits) | 1/8 |
+| 5 | 8.8×10²³ | **38/40** (28 s avg) | 0/8 (2 MSE-hits) | 1/8 |
+
+Wilson 95% CIs: 40/40 → [91.2%, 100%]; 38/40 → [83.5%, 98.6%].
+**With the full escalation ladder, depth-5 recovery is 40/40**: the 2
+default-budget misses (whose correct pairs rank deep inside
+clamp-degenerate match classes — diagnosed in
+`depth5_miss_diagnostics.json`) fall to the last rung, *unranked
+streamed verification*, which checks every generated pair with no caps
+(164 s / 11.7M pairs and 557 s / 42.3M pairs;
+`depth_wall_results.json → depths.5.pool_streamed`). Zero unexplained
+failures remain at any depth 3–5.
 
 Two honest footnotes. (i) GD's "MSE-hits" reach low training MSE with
 the *wrong formula* — dense verification rejects them; this
@@ -76,12 +86,29 @@ MSE-good/formula-wrong gap is exactly why unverified recovery claims
 mislead. (ii) Uniform sampling is *not* hopeless at depths 3–4: dead
 slots give small live trees millions of syntactic realisations, so
 blind sampling finds syntactically abundant targets — another face of
-the same collapse. It dies at depth 5 (space 8.8×10²³), where the pool
-holds 90% (its 4 misses exhaust the default 300k-candidate/300 s
-budget in clamp-degenerate mega-run regimes and are reported as
-explicit failures, never silent). The fraction of random deep trees
-that are *not* depth-critical is itself measured: 21/66 random depth-5
-trees collapse to shallower functions.
+the same collapse. It dies at depth 5 (space 8.8×10²³). The fraction
+of random deep trees that are *not* depth-critical is itself
+measured: 21/66 random depth-5 trees collapse to shallower functions.
+
+### Operator generality: the same machinery on ψ
+
+The pool never looks inside the operator beyond node evaluation and
+two side-canonicalisations, so the entire pipeline runs verbatim on
+`ψ(x,y) = sinh(x) − arsinh(y)` — the *harder* enumeration case: with
+no clamps there is no functional collapse (1,446 distinct = all live
+trees at level 3; 1.43M at level 4, 2.3× EML's). Depth-critical
+recovery (`psi_depth_wall_results.json`):
+
+| depth | ψ pool recovery | mean time |
+|------:|:---------------:|----------:|
+| 3 | **20/20** | 0.00 s |
+| 4 | **20/20** | 0.01 s |
+| 5 | **20/20** | 39.5 s |
+
+Zero targets collapsed to shallower functions (no degeneracy ⇒ every
+random ψ tree is depth-critical), and inversion is exact
+(`a = arsinh(y + arsinh b)`). Reproduce:
+`python -m eml_gam.benchmarks.psi_depth_wall`.
 
 Coverage of unfiltered random deeper targets by the depth-5 solver
 (their children collapse functionally into the depth-4 pool):
@@ -245,14 +272,29 @@ y_hat = model.predict(X_new)           # certified-safe extrapolation
 
 ## Reproducing everything
 
+One command replays the entire evidence base (~6–9 h, CPU only):
+
 ```bash
-python -m eml_gam.benchmarks.depth_wall    # headline: recovery through the wall (~hours)
-python -m eml_gam.benchmarks.showcase      # paper target + minimal-depth certificates
-python -m eml_gam.benchmarks.saturation    # gradient-pathology measurements
-python -m scripts.run_uci_safe             # 9-dataset UCI safe-extrapolation suite
-python -m scripts.make_depth_wall_figures  # regenerate figures
-python -m pytest tests/ -q                 # unit tests
+bash scripts/reproduce_all.sh
 ```
+
+or piecewise:
+
+```bash
+python -m eml_gam.benchmarks.depth_wall     # headline: recovery through the wall (~hours)
+python -m scripts.depth5_rescue             # extended-budget pass on the depth-5 misses
+python -m eml_gam.benchmarks.showcase       # paper target + minimal-depth certificates
+python -m eml_gam.benchmarks.saturation     # gradient-pathology measurements
+python -m eml_gam.benchmarks.psi_depth_wall # operator-generality check (ψ)
+python -m scripts.run_uci_safe              # 9-dataset UCI safe-extrapolation suite
+python -m scripts.make_depth_wall_figures   # regenerate figures
+python -m pytest tests/ -q                  # unit tests
+```
+
+Claim-by-claim artifact map: [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
+Venue plan and cover summary for submitting the manuscript:
+[SUBMISSION.md](SUBMISSION.md). Compiled paper:
+[paper/paper.pdf](paper/paper.pdf).
 
 Earlier-generation experiments (landscape, cross-operator, AEES,
 multiseed, Nguyen/Feynman, transcendence checks) remain reproducible
