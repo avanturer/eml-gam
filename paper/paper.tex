@@ -113,7 +113,10 @@ Odrzywo{\l}ek reports blind-recovery rates of $100\%$ at depth 2,
 ${\sim}25\%$ at depths 3--4, below $1\%$ at depth 5, and $0$ in $448$
 attempts at depth 6~\cite{odrzywolek2026eml}; the earlier iterations
 of this project measured $0\%$ at depth $\ge 3$ on harder,
-depth-critical targets. Because the snap space grows doubly
+depth-critical targets, and an independent follow-up study finds
+\emph{balanced} tree shapes unrecoverable by gradient training even
+at depth 3 — $0/3\,776$ trials across three architectures and three
+operators~\cite{gupta2026arch}. Because the snap space grows doubly
 exponentially ($3.1\times10^{11}$ syntactic configurations at depth 4;
 $8.8\times10^{23}$ at depth 5), exhaustive enumeration looks hopeless,
 and the literature's reflex — better initialisation, better annealing,
@@ -583,12 +586,18 @@ function space is small enough to enumerate outright, which subsumes
 stochastic search below the enumeration horizon and reduces it to
 residual inversion above.
 
-\paragraph{Enumerative program synthesis.} Bottom-up enumeration with
-observational-equivalence pruning is a core technique in program
-synthesis — TRANSIT~\cite{udupa2013}, recursive synthesis with
-equivalence reduction~\cite{albarghouthi2013}, and the enumerative
-solvers of the SyGuS competition~\cite{alur2013}. Our contribution is
-not the enumeration schema but (i) the \emph{measurement} that a
+\paragraph{Exhaustive and enumerative approaches.} Bottom-up
+enumeration with observational-equivalence pruning is a core
+technique in program synthesis — TRANSIT~\cite{udupa2013}, recursive
+synthesis with equivalence reduction~\cite{albarghouthi2013}, and
+the enumerative solvers of the SyGuS competition~\cite{alur2013}.
+Within SR itself, Prioritized Grammar Enumeration~\cite{worm2013},
+exhaustive search with semantic structure
+deduplication~\cite{kammerer2021}, and Exhaustive Symbolic
+Regression~\cite{bartlett2023esr} enumerate all expressions of a
+multi-operator basis up to ${\sim}10$ tree nodes, deduplicate
+syntactically/semantically, and fit each candidate's parameters
+numerically. Our contribution is not the enumeration schema but (i) the \emph{measurement} that a
 trainable SR architecture's function space collapses by five-plus
 orders of magnitude under its own numerical semantics, (ii) the
 identification of that collapse with the optimiser-killing clamp
@@ -597,7 +606,25 @@ $O(\text{pool})$ analytic \emph{root inversion} — a meet-in-the-middle
 step in the spirit of cryptanalytic time--memory
 trade-offs~\cite{diffie1977} — with informativeness-ranked matching,
 and (iv) verification-gated recovery with certificates on failure as
-well as success.
+well as success. Structurally, the single-operator grammar plus
+value-vector dedup under the trained clamped semantics plus root
+inversion reaches expression sizes (up to 63 nodes at depth 5) far
+beyond the ${\sim}10$-node ceilings of syntactic-dedup exhaustive
+SR, at the cost of grammar specificity.
+
+\paragraph{EML follow-up literature.} The three months since the
+source paper have produced universality results for EML trees as
+approximators, algebraic analyses of the operator, hardware
+instantiations, and a computability-theoretic inexpressibility
+theorem (EML numbers coincide with Chow's EL numbers and exclude
+non-computable reals such as Chaitin's
+$\Omega$)~\cite{carney2026}. On the training side, the follow-up
+closest to our question documents the wall in sharper form —
+architecture--target interactions and universally unrecoverable
+balanced shapes~\cite{gupta2026arch} — while remaining inside the
+optimisation paradigm. To our knowledge no prior work enumerates the
+EML function space, inverts the root analytically, or reports
+verified exact recovery beyond depth 4.
 
 \paragraph{Deployable additive models.} GA$^2$M/EBM~\cite{lou2013accurate}
 provides the additive scaffold and the flat-beyond-range behaviour
@@ -681,6 +708,21 @@ A.~Udupa. \emph{Syntax-guided synthesis}. FMCAD 2013.
 \bibitem{diffie1977} W.~Diffie, M.~E.~Hellman.
 \emph{Exhaustive cryptanalysis of the NBS Data Encryption Standard}.
 Computer 10(6):74--84, 1977.
+\bibitem{bartlett2023esr} D.~J.~Bartlett, H.~Desmond, P.~G.~Ferreira.
+\emph{Exhaustive symbolic regression}. IEEE Transactions on
+Evolutionary Computation 28(4), 2024 (arXiv:2211.11461).
+\bibitem{kammerer2021} L.~Kammerer, G.~Kronberger, B.~Burlacu,
+S.~M.~Winkler, M.~Kommenda, M.~Affenzeller. \emph{Symbolic
+regression by exhaustive search: reducing the search space using
+syntactical constraints and efficient semantic structure
+deduplication}. In Genetic Programming Theory and Practice XVIII,
+2021 (arXiv:2109.13895).
+\bibitem{worm2013} T.~Worm, K.~Chiu. \emph{Prioritized grammar
+enumeration: symbolic regression by dynamic programming}. GECCO 2013.
+\bibitem{gupta2026arch} C.~Gupta. \emph{Why architecture choice
+matters in symbolic regression}. arXiv:2604.23256, 2026.
+\bibitem{carney2026} M.~Carney. \emph{Inexpressibility in
+Exp-Minus-Log}. arXiv:2605.01636, 2026.
 \end{thebibliography}
 
 \end{document}
