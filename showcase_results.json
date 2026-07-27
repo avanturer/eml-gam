@@ -1,0 +1,66 @@
+{
+  "paper_target": {
+    "target": "ln(e - ln(exp(x) - ln(y)))",
+    "pool_sizes": [
+      3,
+      12,
+      147,
+      19407
+    ],
+    "build_seconds": 0.8049666881561279,
+    "solve_seconds": 9.860631942749023,
+    "n_matches": 16,
+    "recovered": true,
+    "expression": "E - log(exp(E)/(E - log(exp(x) - log(y))))"
+  },
+  "minimal_depths": {
+    "grid": "256 jittered points on [0.3, 2.5]",
+    "targets": {
+      "exp(x)": {
+        "exact_depth": 1,
+        "affine_depth": 1,
+        "expression": "exp(x)"
+      },
+      "ln(x)": {
+        "exact_depth": 3,
+        "affine_depth": 1,
+        "expression": "E - log(exp(E)/x)"
+      },
+      "-x": {
+        "exact_depth": null,
+        "affine_depth": 2,
+        "expression": "-2.71828 +1 * E - log(exp(x))"
+      },
+      "1/x": {
+        "exact_depth": null,
+        "affine_depth": 2,
+        "expression": "+0 +0.065988 * exp(E)/x"
+      },
+      "x**2": {
+        "exact_depth": null,
+        "affine_depth": null,
+        "expression": null
+      },
+      "sqrt(x)": {
+        "exact_depth": null,
+        "affine_depth": null,
+        "expression": null
+      },
+      "e - ln(x)": {
+        "exact_depth": 1,
+        "affine_depth": 1,
+        "expression": "E - log(x)"
+      },
+      "sinh(x)": {
+        "exact_depth": null,
+        "affine_depth": null,
+        "expression": null
+      },
+      "cosh(x)": {
+        "exact_depth": null,
+        "affine_depth": null,
+        "expression": null
+      }
+    }
+  }
+}

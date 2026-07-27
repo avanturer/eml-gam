@@ -1,0 +1,42 @@
+[
+  {
+    "target": 0,
+    "a_in_pool": true,
+    "a_rep_offgrid_dev": 0.0,
+    "a_rep_size": 7,
+    "b_in_pool": true,
+    "b_rep_offgrid_dev": 0.0,
+    "b_rep_size": 13,
+    "rep_pair_offgrid_dev": 0.0
+  },
+  {
+    "target": 5,
+    "a_in_pool": true,
+    "a_rep_offgrid_dev": 0.0,
+    "a_rep_size": 15,
+    "b_in_pool": true,
+    "b_rep_offgrid_dev": 0.0,
+    "b_rep_size": 21,
+    "rep_pair_offgrid_dev": 0.0
+  },
+  {
+    "target": 26,
+    "a_in_pool": true,
+    "a_rep_offgrid_dev": 0.0,
+    "a_rep_size": 13,
+    "b_in_pool": true,
+    "b_rep_offgrid_dev": 0.0,
+    "b_rep_size": 23,
+    "rep_pair_offgrid_dev": 0.0
+  },
+  {
+    "target": 38,
+    "a_in_pool": true,
+    "a_rep_offgrid_dev": 0.0,
+    "a_rep_size": 7,
+    "b_in_pool": true,
+    "b_rep_offgrid_dev": 0.0,
+    "b_rep_size": 21,
+    "rep_pair_offgrid_dev": 0.0
+  }
+]

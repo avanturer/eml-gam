@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eml-gam"
-version = "0.1.0"
-description = "Gradient-trained symbolic GA²M built on the EML operator."
+version = "0.2.0"
+description = "Canonical function-pool enumeration for EML symbolic regression: complete recovery through the depth wall + certified safe extrapolation."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }

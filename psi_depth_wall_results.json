@@ -1,0 +1,42 @@
+{
+  "protocol": {
+    "grid_seed": 12345,
+    "n_grid": 256,
+    "rel_tol": 1e-06,
+    "n_targets": 20,
+    "pool_sizes": [
+      2,
+      6,
+      38,
+      1446,
+      1431542
+    ],
+    "build_seconds": 74.34250545501709
+  },
+  "depths": {
+    "3": {
+      "n_critical": 20,
+      "n_sampled": 21,
+      "n_collapsed": 0,
+      "n_degenerate": 1,
+      "recovered": 20,
+      "mean_seconds": 0.0005927324295043945
+    },
+    "4": {
+      "n_critical": 20,
+      "n_sampled": 24,
+      "n_collapsed": 0,
+      "n_degenerate": 4,
+      "recovered": 20,
+      "mean_seconds": 0.011923098564147949
+    },
+    "5": {
+      "n_critical": 20,
+      "n_sampled": 41,
+      "n_collapsed": 0,
+      "n_degenerate": 21,
+      "recovered": 20,
+      "mean_seconds": 39.48842787742615
+    }
+  }
+}
