@@ -10,8 +10,9 @@ abstract: >-
   mechanistic theory of the depth wall, and SafePoolGAM — an additive
   model with certified safe extrapolation on tabular data.
 authors:
-  - family-names: "avanturer"
-    given-names: ""
+  - family-names: "Orkin"
+    given-names: "Rodion"
+    email: "rodion.ork@yandex.ru"
 version: "0.2.0"
 date-released: "2026-07-26"
 repository-code: "https://github.com/avanturer/eml-gam"
